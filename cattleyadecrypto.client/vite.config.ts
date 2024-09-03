@@ -46,6 +46,16 @@ export default defineConfig({
             '^/weatherforecast': {
                 target,
                 secure: false
+            },
+            '^/messageHub/*': {
+                target,
+                secure: true,
+                ws: true
+            },
+            '^/messageHub': {
+                target,
+                secure: true,
+                ws: true
             }
         },
         port: 5173,
