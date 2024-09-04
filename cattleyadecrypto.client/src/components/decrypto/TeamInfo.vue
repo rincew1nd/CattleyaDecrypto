@@ -1,33 +1,19 @@
-﻿<script lang="ts">
-import {defineComponent, type PropType} from 'vue'
+﻿<script setup lang="ts">
+import { DecryptoTeam, type Team } from '../types/DecryptoTypes'
 
-export interface TeamInfoObj {
-  name: string
-  players: string[]
-  miscommunications: number
-  interceptions: number
-}
-
-export default defineComponent({
-  props: {
-    teamInfo: {
-      type: Object as PropType<TeamInfoObj>,
-      required: true
-    }
-  }
-})
+const { teamInfo, color } = defineProps<{ teamInfo: Team, color: DecryptoTeam }>();
 </script>
 
 <template>
   <div class="block-border">
-    <p class="name">Team: {{teamInfo.name}}</p>
+    <p :class="[color == DecryptoTeam.Blue ? 'blue' : 'red', 'name']">TEAM {{color}}</p>
     <hr/>
     <div class="info">
-      <div class="br">
+      <div class="br block">
         <p class="header">Players</p>
         <hr/>
-        <div>
-          <p v-for="nickname in teamInfo.players">{{nickname}}</p>
+        <div class="block-center">
+          <p v-for="player in teamInfo?.players">{{player}}</p>
         </div>
       </div>
       <div class="bl block">
@@ -36,8 +22,8 @@ export default defineComponent({
           <hr/>
         </div>
         <div class="block-center">
-          <p>Interceptions: {{teamInfo.interceptions}}</p>
-          <p>Miscommunications: {{teamInfo.miscommunications}}</p>
+          <p>Interceptions: {{ teamInfo.interceptionCount }}</p>
+          <p>Miscommunications: {{ teamInfo.miscommunicationCount }}</p>
         </div>
       </div>
     </div>
@@ -53,6 +39,5 @@ export default defineComponent({
 .name {
   text-align: center;
   font-size: 1.5rem;
-  background: v-bind('teamInfo.name');
 }
 </style>

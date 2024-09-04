@@ -43,16 +43,7 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            '^/weatherforecast': {
-                target,
-                secure: false
-            },
-            '^/messageHub/*': {
-                target,
-                secure: true,
-                ws: true
-            },
-            '^/messageHub': {
+            '^/api/*': {
                 target,
                 secure: true,
                 ws: true

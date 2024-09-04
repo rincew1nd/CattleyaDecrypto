@@ -22,6 +22,11 @@ public class DecryptoMatch
     /// Match state.
     /// </summary>
     public DecryptMatchState State { get; set; }
+
+    /// <summary>
+    /// Team that won the match.
+    /// </summary>
+    public TeamEnum? WonTeam { get; set; }
     
     /// <summary>
     /// Team information.
@@ -32,11 +37,6 @@ public class DecryptoMatch
     /// Clues to solve.
     /// </summary>
     public Dictionary<TeamEnum, CluesToSolve> TemporaryClues { get; set; } = new();
-
-    /// <summary>
-    /// Team that won the match.
-    /// </summary>
-    public TeamEnum? WonTeam { get; set; }
 
     /// <summary>
     /// Get default decrypto match.

@@ -1,7 +1,10 @@
-﻿using CattleyaDecrypto.Server.Models.Enums;
+﻿using CattleyaDecrypto.Server.Architecture;
+using CattleyaDecrypto.Server.Models.Enums;
 using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Models.ViewModels;
 using CattleyaDecrypto.Server.Services.Interfaces;
+using CattleyaDecrypto.Server.Services.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace CattleyaDecrypto.Server.Services;
@@ -13,11 +16,16 @@ public class DecryptoMatchService : IDecryptoMatchService
 {
     private readonly IWordPuzzleService _wordPuzzleService;
     private readonly IMemoryCache _memoryCache;
+    private readonly IHubContext<DecryptoMessageHub> _decryptoMessageHub;
 
-    public DecryptoMatchService(IWordPuzzleService wordPuzzleService, IMemoryCache memoryCache)
+    public DecryptoMatchService(
+        IWordPuzzleService wordPuzzleService,
+        IMemoryCache memoryCache,
+        IHubContext<DecryptoMessageHub> decryptoMessageHub)
     {
         _wordPuzzleService = wordPuzzleService;
         _memoryCache = memoryCache;
+        _decryptoMessageHub = decryptoMessageHub;
     }
     
     /// <summary>
@@ -47,67 +55,93 @@ public class DecryptoMatchService : IDecryptoMatchService
     
     /// <summary>
     /// Get full state of a match.
+    ///
+    /// TODO Think about moving deep copy of an object to frontend.
     /// </summary>
-    public DecryptoMatch GetMatch(Guid matchId)
+    public DecryptoMatch GetMatch(Guid matchId, Guid userId)
     {
-        if (_memoryCache.TryGetValue(matchId, out var match))
+        var match = GetMatchFromCache(matchId);
+
+        // If match is over, do not deep copy it.
+        if (match.State == DecryptMatchState.Finished)
         {
-            return (match as DecryptoMatch)!;
+            return match;
         }
-        throw new ApplicationException("Match not found");
+        
+        // Deep copy a match so it could be changed.
+        var matchCopy = GetMatchFromCache(matchId).CloneJson();
+        var team = matchCopy!.Teams.Where(t => t.Value.Players.ContainsKey(userId)).Select(t => t.Key).FirstOrDefault();
+
+        // Clear words of opposite team, so the opponent can't see them.
+        var oppositeTeam = OppositeTeam(team);
+        foreach (var (key, value) in matchCopy.Teams)
+        {
+            if (oppositeTeam == null || oppositeTeam == key)
+            {
+                value.Words.Clear();
+            }
+        }
+
+        return matchCopy;
     }
     
     /// <summary>
     /// Join a match.
     /// </summary>
-    public bool JoinTeam(Guid matchId, TeamEnum team, Guid userId)
+    public async Task<bool> JoinTeamAsync(Guid matchId, TeamEnum team, Guid userId, string userName)
     {
-        //TODO Notify about player connection.
-        
-        var match = GetMatch(matchId);
-        if (match.Teams.SelectMany(t => t.Value.Players).Contains(userId))
+        var match = GetMatchFromCache(matchId);
+        if (match.Teams.SelectMany(t => t.Value.Players.Keys).Contains(userId))
         {
             return false;
         }
-        match.Teams[team].Players.Add(userId);
+        match.Teams[team].Players.Add(userId, userName);
+
+        await UpdateMatchState(match, DecryptMatchState.WaitingForPlayers);
+        
         return true;
     }
 
     /// <summary>
     /// Give clues.
     /// </summary>
-    public bool GiveClues(GiveCluesVm model)
+    public async Task<bool> GiveCluesAsync(GiveCluesVm model, Guid userId)
     {
-        var match = GetMatch(model.MatchId);
+        var match = GetMatchFromCache(model.MatchId);
 
         if (match.State != DecryptMatchState.GiveClues)
         {
             throw new ApplicationException($"Wrong state for 'Give clues' action - {match.State}");
         }
 
+        AssertPlayerInTeam(match, model.Team, userId);
+
         var result = match.TemporaryClues.TryAdd(
             model.Team,
-            new CluesToSolve()
+            new CluesToSolve
             {
                 Order = model.Order,
                 Clues = model.Clues
             });
 
-        UpdateMatchState(match, DecryptMatchState.GiveClues);
+        await UpdateMatchState(match, DecryptMatchState.GiveClues);
+        
         return result;
     }
 
     /// <summary>
     /// Solve clues.
     /// </summary>
-    public void SolveClues(SolveOrInterceptCluesVm model)
+    public async Task SolveCluesASync(SolveOrInterceptCluesVm model, Guid userId)
     {
-        var match = GetMatch(model.MatchId);
+        var match = GetMatchFromCache(model.MatchId);
 
         if (match.State != DecryptMatchState.SolveClues)
         {
             throw new ApplicationException($"Wrong state for 'SolveClues' action - {match.State}");
         }
+        
+        AssertPlayerInTeam(match, model.Team, userId);
         
         if (!match.TemporaryClues.TryGetValue(model.Team, out var cluesToSolve))
         {
@@ -120,43 +154,90 @@ public class DecryptoMatchService : IDecryptoMatchService
             match.Teams[model.Team].MiscommunicationCount++;
         }
         
-        UpdateMatchState(match, DecryptMatchState.SolveClues);
+        await UpdateMatchState(match, DecryptMatchState.SolveClues);
     }
 
     /// <summary>
     /// Intercept clues.
     /// </summary>
-    public void Intercept(SolveOrInterceptCluesVm model)
+    public async Task InterceptASync(SolveOrInterceptCluesVm model, Guid userId)
     {
-        var enemyTeam = model.Team == TeamEnum.Blue ? TeamEnum.Red : TeamEnum.Blue;
+        var enemyTeam = OppositeTeam(model.Team);
+        if (!enemyTeam.HasValue)
+        {
+            throw new ApplicationException("Player is not in a team");
+        }
         
-        var match = GetMatch(model.MatchId);
+        var match = GetMatchFromCache(model.MatchId);
 
         if (match.State != DecryptMatchState.Intercept)
         {
             throw new ApplicationException($"Wrong state for 'Intercept' action - {match.State}");
         }
         
-        if (!match.TemporaryClues.TryGetValue(enemyTeam, out var cluesToSolve))
+        AssertPlayerInTeam(match, model.Team, userId);
+        
+        if (!match.TemporaryClues.TryGetValue(enemyTeam.Value, out var cluesToSolve))
         {
             throw new ApplicationException("Could not solve unriddle clues");
         }
 
-        match.TemporaryClues[enemyTeam].IsIntercepted = true;
+        match.TemporaryClues[enemyTeam.Value].IsIntercepted = true;
         if (cluesToSolve.Order == model.Order)
         {
             match.Teams[model.Team].InterceptionCount++;
         }
         
-        UpdateMatchState(match, DecryptMatchState.SolveClues);
+        await UpdateMatchState(match, DecryptMatchState.SolveClues);
     }
 
-    private bool UpdateMatchState(DecryptoMatch match, DecryptMatchState currentState)
+    public async Task SendMatchUpdate(Guid matchId)
+    {
+        var match = GetMatchFromCache(matchId);
+        await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match);
+    }
+
+    /// <summary>
+    /// Get full state of a match.
+    /// </summary>
+    private DecryptoMatch GetMatchFromCache(Guid matchId)
+    {
+        if (_memoryCache.TryGetValue<DecryptoMatch>(matchId, out var match))
+        {
+            return match!;
+        }
+        throw new ApplicationException("Match not found");
+    }
+
+    /// <summary>
+    /// Assert that the player is in the right team.
+    /// </summary>
+    private void AssertPlayerInTeam(DecryptoMatch match, TeamEnum team, Guid userId)
+    {
+        if (!match.Teams[team].Players.ContainsKey(userId))
+        {
+            throw new ApplicationException("Player is in opposite team.");
+        }
+    }
+
+    /// <summary>
+    /// Update a state of a match. Notify players about the change.
+    /// </summary>
+    private async Task<bool> UpdateMatchState(DecryptoMatch match, DecryptMatchState currentState)
     {
         bool stateChanged = false;
         
         switch (currentState)
         {
+            case DecryptMatchState.WaitingForPlayers:
+            {
+                if (match.Teams.All(t => t.Value.Players.Any()))
+                {
+                    match.State = DecryptMatchState.GiveClues;
+                    stateChanged = true;
+                }
+                break;
+            }
             case DecryptMatchState.GiveClues:
             {
                 if (match.TemporaryClues.Count == 2)
@@ -216,10 +297,23 @@ public class DecryptoMatchService : IDecryptoMatchService
 
         if (stateChanged)
         {
-            //TODO Notify about match state change.
+            await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match);
             return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Get opposite teams. If 'Unknown', both are opposite.
+    /// </summary>
+    private TeamEnum? OppositeTeam(TeamEnum team)
+    {
+        return team switch
+        {
+            TeamEnum.Blue => TeamEnum.Red,
+            TeamEnum.Red => TeamEnum.Blue,
+            _ => null
+        };
     }
 }

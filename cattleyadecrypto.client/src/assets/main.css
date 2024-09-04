@@ -38,3 +38,9 @@
   border: white solid 1px;
   border-radius: 5px;
 }
+.blue {
+  background: blue;
+}
+.red {
+  background: red;
+}

@@ -1,11 +1,10 @@
 ﻿<script setup lang="ts">
-import { AuthStorage } from './AuthStorage.js'
 import Button from 'primevue/button'
 import Toolbar from 'primevue/toolbar'
 import {router} from "@/router";
 
 function newGameButton() {
-  router.push('decrypto/testasdf');
+  router.push('/decrypto/new');
 }
 </script>
 
@@ -13,11 +12,13 @@ function newGameButton() {
   <Toolbar>
     <template #start>
       <Button @click='newGameButton' label="New Game" text plain />
-      <Button label="Join Game" text plain />
+    </template>
+    <template v-if="$route.params.id" #center>
+      <h2>Game: {{$route.params.id}}</h2>
     </template>
     <template #end>
-      <p class="nickname">{{ AuthStorage.name }}</p>
-      <Button text plain>{{ AuthStorage.isLogin ? 'Logout' : 'Login' }}</Button>
+      <p class="nickname">{{ 'TODO' }}</p>
+      <Button text plain>{{ 'TODO' }}</Button>
     </template>
   </Toolbar>
 </template>

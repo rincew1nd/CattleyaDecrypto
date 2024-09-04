@@ -1,6 +1,3 @@
-using System.Collections.Concurrent;
-using CattleyaDecrypto.Server.Models.ViewModels;
-
 namespace CattleyaDecrypto.Server.Models.Models;
 
 /// <summary>
@@ -31,5 +28,5 @@ public class TeamInfoModel
     /// <summary>
     /// Player list.
     /// </summary>
-    public ConcurrentBag<Guid> Players { get; set; } = new();
+    public Dictionary<Guid, string> Players { get; set; } = new();
 }

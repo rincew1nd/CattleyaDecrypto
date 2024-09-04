@@ -8,25 +8,25 @@ public enum DecryptMatchState : short
     /// <summary>
     /// Match created, waiting for players to start.
     /// </summary>
-    WaitingForPlayers,
+    WaitingForPlayers = 0,
     
     /// <summary>
     /// Waiting for clues to be submitted.
     /// </summary>
-    GiveClues,
+    GiveClues = 1,
     
     /// <summary>
     /// Team is solving the clues.
     /// </summary>
-    SolveClues,
+    SolveClues = 2,
     
     /// <summary>
     /// Intercept enemy team.
     /// </summary>
-    Intercept,
+    Intercept = 3,
     
     /// <summary>
     /// Match is finished.
     /// </summary>
-    Finished
+    Finished = 4
 }

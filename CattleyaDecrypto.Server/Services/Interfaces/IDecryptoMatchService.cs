@@ -7,9 +7,10 @@ namespace CattleyaDecrypto.Server.Services.Interfaces;
 public interface IDecryptoMatchService
 {
     DecryptoMatch CreateMatch();
-    DecryptoMatch? GetMatch(Guid matchId);
-    bool JoinTeam(Guid matchId, TeamEnum team, Guid userId);
-    bool GiveClues(GiveCluesVm model);
-    void SolveClues(SolveOrInterceptCluesVm model);
-    void Intercept(SolveOrInterceptCluesVm model);
+    DecryptoMatch GetMatch(Guid matchId, Guid userId);
+    Task<bool> JoinTeamAsync(Guid matchId, TeamEnum team, Guid userId, string name);
+    Task<bool> GiveCluesAsync(GiveCluesVm model, Guid userId);
+    Task SolveCluesASync(SolveOrInterceptCluesVm model, Guid userId);
+    Task InterceptASync(SolveOrInterceptCluesVm model, Guid userId);
+    Task SendMatchUpdate(Guid matchId);
 }

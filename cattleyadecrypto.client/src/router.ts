@@ -1,16 +1,19 @@
-﻿import { createMemoryHistory, createRouter } from 'vue-router'
+﻿import { createWebHistory, createRouter } from 'vue-router'
 
-import MainPage from './components/MainPage.vue'
+import About from "@/components/About.vue"
+import Page404 from './components/Page404.vue'
+
+import NewGameWindow from "@/components/decrypto/NewGameWindow.vue";
 import MainBoard from './components/decrypto/MainBoard.vue'
-import SignalRExample from './components/SignalRExample.vue'
 
 const routes = [
-    { path: '/', component: MainPage },
-    { path: '/decrypto/:id', component: MainBoard },
-    { path: '/test', component: SignalRExample }
+    { path: '/', component: About },
+    { path: '/decrypto/new', component: NewGameWindow },
+    { path: '/decrypto/:id', component: MainBoard, props: true },
+    { path: '/:pathMatch(.*)*', name: 'Not Found', component: Page404 },
 ]
 
 export const router = createRouter({
-    history: createMemoryHistory(),
+    history: createWebHistory(),
     routes,
 })

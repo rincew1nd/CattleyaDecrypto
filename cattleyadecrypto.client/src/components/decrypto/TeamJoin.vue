@@ -1,0 +1,27 @@
+﻿<script setup lang="ts">
+import {DecryptoTeam} from "@/components/types/DecryptoTypes";
+import DecryptoDataService from "@/components/services/DecryptoDataService";
+
+const { team, id } = defineProps<{ team: DecryptoTeam, id: string }>();
+
+function joinTeam() {
+  DecryptoDataService.joinTeam(id, team);
+}
+</script>
+
+<template>
+  <div class="center">
+    <button :class="[team === DecryptoTeam.Blue ? 'blue' : 'red']" @click=joinTeam>JOIN</button>
+  </div>
+</template>
+
+<style scoped>
+.center {
+  text-align: center;
+}
+.center > button {
+  width: 98%;
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+</style>

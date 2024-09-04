@@ -1,12 +1,15 @@
+using CattleyaDecrypto.Server.Architecture;
 using CattleyaDecrypto.Server.Services;
 using CattleyaDecrypto.Server.Services.Interfaces;
 using CattleyaDecrypto.Server.Services.SignalR;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonDictionaryTKeyEnumTValueConverter());
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
@@ -51,7 +54,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<MessageHub>("/messageHub");
+app.MapHub<DecryptoMessageHub>("/api/decryptoMessageHub");
 
 app.MapFallbackToFile("/index.html");
 
