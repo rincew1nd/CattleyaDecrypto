@@ -1,12 +1,12 @@
 ﻿<script setup lang="ts">
-import { DecryptoTeam, type Team } from '../types/DecryptoTypes'
+import { DecryptoTeamEnum, type DecryptoTeam } from '../types/DecryptoTypes'
 
-const { teamInfo, color } = defineProps<{ teamInfo: Team, color: DecryptoTeam }>();
+const { teamInfo, color } = defineProps<{ teamInfo: DecryptoTeam, color: DecryptoTeamEnum }>();
 </script>
 
 <template>
   <div class="block-border">
-    <p :class="[color == DecryptoTeam.Blue ? 'blue' : 'red', 'name']">TEAM {{color}}</p>
+    <p :class="[color == DecryptoTeamEnum.Blue ? 'blue' : 'red', 'name']">TEAM {{color}}</p>
     <hr/>
     <div class="info">
       <div class="br block">

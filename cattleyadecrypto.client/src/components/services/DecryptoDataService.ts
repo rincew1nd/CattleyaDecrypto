@@ -1,4 +1,4 @@
-﻿import { type DecryptoMatch, DecryptoTeam } from '../types/DecryptoTypes'
+﻿import { type DecryptoMatch, DecryptoTeamEnum } from '../types/DecryptoTypes'
 
 interface AuthInfo {
     userId: string,
@@ -12,8 +12,8 @@ class DecryptoDataService {
         this.login().then(r => {});
     }
 
-    getPlayerId(): string | undefined { return this.authInfo?.userId; }
-    getPlayerName(): string | undefined { return this.authInfo?.name; }
+    getPlayerId(): string { return this.authInfo?.userId ?? ''; }
+    getPlayerName(): string { return this.authInfo?.name ?? ''; }
     
     async login(): Promise<void> {
         let response = await fetch('/api/authentication/login', {method: "POST"});
@@ -39,7 +39,7 @@ class DecryptoDataService {
         return json as DecryptoMatch;
     }
 
-    async joinTeam(id: string, team: DecryptoTeam): Promise<boolean> {
+    async joinTeam(id: string, team: DecryptoTeamEnum): Promise<boolean> {
         let response = await fetch(`/api/decrypto/join-team?matchId=${id}&team=${team}`, {method: "POST"});
         let json: any = await response.json();
         return json as boolean;

@@ -1,4 +1,4 @@
-﻿import {type DecryptoMatch, DecryptoMatchState, DecryptoTeam, type Team} from '../types/DecryptoTypes'
+﻿import {type DecryptoMatch, DecryptoMatchState, DecryptoTeamEnum, type DecryptoTeam} from '../types/DecryptoTypes'
 
 export const DecryptoStore: DecryptoMatch = {
     id: "match12345",
@@ -6,7 +6,7 @@ export const DecryptoStore: DecryptoMatch = {
     state: DecryptoMatchState.GiveClues,
     wonTeam: undefined,
     teams: {
-        [DecryptoTeam.Red]: {
+        [DecryptoTeamEnum.Red]: {
             miscommunicationCount: 1,
             interceptionCount: 0,
             words: {
@@ -23,7 +23,7 @@ export const DecryptoStore: DecryptoMatch = {
             },
             players: ["Alice", "Bob", "Charlie"]
         },
-        [DecryptoTeam.Blue]: {
+        [DecryptoTeamEnum.Blue]: {
             miscommunicationCount: 0,
             interceptionCount: 1,
             words: {
@@ -42,7 +42,7 @@ export const DecryptoStore: DecryptoMatch = {
         }
     },
     temporaryClues: {
-        [DecryptoTeam.Red]: {
+        [DecryptoTeamEnum.Red]: {
             order: [1, 2, 3],
             clues: {
                 1: "fruit",
@@ -52,7 +52,7 @@ export const DecryptoStore: DecryptoMatch = {
             isSolved: false,
             isIntercepted: false
         },
-        [DecryptoTeam.Blue]: {
+        [DecryptoTeamEnum.Blue]: {
             order: [1, 2, 3],
             clues: {
                 1: "pet",

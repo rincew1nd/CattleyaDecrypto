@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
-import { type Team } from '../types/DecryptoTypes'
-const { teamInfo } = defineProps<{ teamInfo: Team }>();
+import { type DecryptoTeam } from '../types/DecryptoTypes'
+const { teamInfo } = defineProps<{ teamInfo: DecryptoTeam }>();
 </script>
 
 <template>

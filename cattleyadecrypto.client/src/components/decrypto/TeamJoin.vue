@@ -1,8 +1,8 @@
 ﻿<script setup lang="ts">
-import {DecryptoTeam} from "@/components/types/DecryptoTypes";
+import {DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
 import DecryptoDataService from "@/components/services/DecryptoDataService";
 
-const { team, id } = defineProps<{ team: DecryptoTeam, id: string }>();
+const { team, id } = defineProps<{ team: DecryptoTeamEnum, id: string }>();
 
 function joinTeam() {
   DecryptoDataService.joinTeam(id, team);
@@ -11,7 +11,7 @@ function joinTeam() {
 
 <template>
   <div class="center">
-    <button :class="[team === DecryptoTeam.Blue ? 'blue' : 'red']" @click=joinTeam>JOIN</button>
+    <button :class="[team === DecryptoTeamEnum.Blue ? 'blue' : 'red']" @click=joinTeam>JOIN</button>
   </div>
 </template>
 

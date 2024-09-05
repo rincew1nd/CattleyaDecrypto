@@ -1,5 +1,6 @@
 ﻿using CattleyaDecrypto.Server.Architecture;
 using CattleyaDecrypto.Server.Models.Enums;
+using CattleyaDecrypto.Server.Models.EventModels;
 using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Models.ViewModels;
 using CattleyaDecrypto.Server.Services.Interfaces;
@@ -79,6 +80,13 @@ public class DecryptoMatchService : IDecryptoMatchService
         }
         match.Teams[team].Players.Add(userId, userName);
 
+        await _decryptoMessageHub.Clients.Group(match.Id.ToString())
+            .SendAsync("PlayerJoined", new DecryptoPlayerJoinedEvent()
+            {
+                PlayerId = userId,
+                PlayerName = userName,
+                Team = team
+            });
         await UpdateMatchState(match, DecryptMatchState.WaitingForPlayers);
         
         return true;
@@ -103,10 +111,17 @@ public class DecryptoMatchService : IDecryptoMatchService
             new CluesToSolve
             {
                 Order = model.Order,
-                Clues = model.Clues
+                Clues = model.Clues,
+                RiddlerId = userId
             });
 
-        await UpdateMatchState(match, DecryptMatchState.GiveClues);
+        if (result)
+        {
+            if (await UpdateMatchState(match, DecryptMatchState.GiveClues) && match.State == DecryptMatchState.SolveClues)
+            {
+                await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("SolveClues", match.TemporaryClues);
+            }
+        }
         
         return result;
     }
@@ -273,10 +288,7 @@ public class DecryptoMatchService : IDecryptoMatchService
 
         if (stateChanged)
         {
-            // TODO For the prototype it's fine. But in reality messages should be more concrete and contains only a
-            // TODO pieces of model that was updated, not the whole model itself. But because i'm a dummy, it will
-            // TODO stay that way until i will understand better how vue works and frontend works.
-            await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match);
+            await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match.State);
             return true;
         }
 

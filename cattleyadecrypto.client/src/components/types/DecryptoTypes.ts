@@ -6,7 +6,7 @@
     Finished = 4,
 }
 
-export enum DecryptoTeam {
+export enum DecryptoTeamEnum {
     Unknown = 0,
     Red = 1,
     Blue = 2
@@ -16,22 +16,29 @@ export interface DecryptoMatch {
     id:             string;
     round:          number;
     state:          DecryptoMatchState;
-    wonTeam?:       DecryptoTeam;
-    teams:          { [key in DecryptoTeam]: Team };
-    temporaryClues: { [key in DecryptoTeam]: TemporaryClue };
+    wonTeam?:       DecryptoTeamEnum;
+    teams:          Record<DecryptoTeamEnum, DecryptoTeam>;
+    temporaryClues: Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
 }
 
-export interface Team {
+export interface DecryptoTeam {
     miscommunicationCount: number;
     interceptionCount:     number;
-    words:                 { [key: number]: string };
-    clues:                 { [key: number]: string[] };
-    players:               { [key: string]: string };
+    words:                 Record<number, string>;
+    clues:                 Record<number, string[]>;
+    players:               Record<string, string>;
 }
 
-export interface TemporaryClue {
+export interface DecryptoTemporaryClue {
     order:         number[];
-    clues:         { [key: number]: string };
+    clues:         Record<number, string>;
+    riddler:       string;
     isSolved:      boolean;
     isIntercepted: boolean;
+}
+
+export interface DecryptoPlayerJoined {
+    playerId:   string;
+    playerName: string;
+    team:       DecryptoTeamEnum;
 }

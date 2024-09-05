@@ -14,6 +14,11 @@ public class CluesToSolve
     /// Clues.
     /// </summary>
     public Dictionary<int, string> Clues { get; set; }
+    
+    /// <summary>
+    /// Player ID who riddled clues.
+    /// </summary>
+    public Guid RiddlerId { get; set; }
 
     /// <summary>
     /// Was clues been solved.
