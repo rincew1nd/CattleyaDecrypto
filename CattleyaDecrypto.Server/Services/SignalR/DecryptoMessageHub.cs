@@ -1,5 +1,4 @@
-﻿using CattleyaDecrypto.Server.Models.Models;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 
 namespace CattleyaDecrypto.Server.Services.SignalR;
 

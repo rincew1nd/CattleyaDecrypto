@@ -12,5 +12,4 @@ public interface IDecryptoMatchService
     Task<bool> GiveCluesAsync(GiveCluesVm model, Guid userId);
     Task SolveCluesASync(SolveOrInterceptCluesVm model, Guid userId);
     Task InterceptASync(SolveOrInterceptCluesVm model, Guid userId);
-    Task SendMatchUpdate(Guid matchId);
 }

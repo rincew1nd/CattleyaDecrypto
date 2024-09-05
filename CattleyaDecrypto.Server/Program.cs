@@ -12,7 +12,10 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.Converters.Add(new JsonDictionaryTKeyEnumTValueConverter());
+});
 builder.Services.AddMemoryCache();
 
 // Cookie authentication

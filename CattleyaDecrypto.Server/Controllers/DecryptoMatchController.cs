@@ -1,12 +1,9 @@
-﻿using System.Globalization;
-using CattleyaDecrypto.Server.Models.Enums;
+﻿using CattleyaDecrypto.Server.Models.Enums;
 using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Models.ViewModels;
 using CattleyaDecrypto.Server.Services.Interfaces;
-using CattleyaDecrypto.Server.Services.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 
 namespace CattleyaDecrypto.Server.Controllers;
 
@@ -24,26 +21,6 @@ public class DecryptoMatchController : ControllerBase
     {
         _userContextService = userContextService;
         _decryptoMatchService = decryptoMatchService;
-    }
-
-    [HttpGet("signalr-test")]
-    public async Task SignalRTest([FromServices] IHubContext<DecryptoMessageHub> hub)
-    {
-        await hub.Clients.All.SendAsync("SignalRTest", DateTime.Now.ToString(CultureInfo.InvariantCulture));
-    }
-
-    [HttpGet("send-match")]
-    public async Task SendMatchUpdate(Guid matchId)
-    {
-        await _decryptoMatchService.SendMatchUpdate(matchId);
-    }
-
-    [HttpGet("words")]
-    public IEnumerable<string> Get(
-        [FromServices] IWordPuzzleService wordPuzzleService,
-        [FromQuery] int wordCount)
-    {
-        return wordPuzzleService.PuzzleWords(wordCount);
     }
     
     [HttpPost("create-match")]

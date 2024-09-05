@@ -56,33 +56,15 @@ public class DecryptoMatchService : IDecryptoMatchService
     /// <summary>
     /// Get full state of a match.
     ///
-    /// TODO Think about moving deep copy of an object to frontend.
+    /// TODO Think about the better way to prevent people to cheat by looking at network activity.
     /// </summary>
     public DecryptoMatch GetMatch(Guid matchId, Guid userId)
     {
-        var match = GetMatchFromCache(matchId);
-
-        // If match is over, do not deep copy it.
-        if (match.State == DecryptMatchState.Finished)
+        if (_memoryCache.TryGetValue<DecryptoMatch>(matchId, out var match))
         {
-            return match;
+            return match!;
         }
-        
-        // Deep copy a match so it could be changed.
-        var matchCopy = GetMatchFromCache(matchId).CloneJson();
-        var team = matchCopy!.Teams.Where(t => t.Value.Players.ContainsKey(userId)).Select(t => t.Key).FirstOrDefault();
-
-        // Clear words of opposite team, so the opponent can't see them.
-        var oppositeTeam = OppositeTeam(team);
-        foreach (var (key, value) in matchCopy.Teams)
-        {
-            if (oppositeTeam == null || oppositeTeam == key)
-            {
-                value.Words.Clear();
-            }
-        }
-
-        return matchCopy;
+        throw new ApplicationException("Match not found");
     }
     
     /// <summary>
@@ -191,12 +173,6 @@ public class DecryptoMatchService : IDecryptoMatchService
         await UpdateMatchState(match, DecryptMatchState.SolveClues);
     }
 
-    public async Task SendMatchUpdate(Guid matchId)
-    {
-        var match = GetMatchFromCache(matchId);
-        await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match);
-    }
-
     /// <summary>
     /// Get full state of a match.
     /// </summary>
@@ -297,6 +273,9 @@ public class DecryptoMatchService : IDecryptoMatchService
 
         if (stateChanged)
         {
+            // TODO For the prototype it's fine. But in reality messages should be more concrete and contains only a
+            // TODO pieces of model that was updated, not the whole model itself. But because i'm a dummy, it will
+            // TODO stay that way until i will understand better how vue works and frontend works.
             await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match);
             return true;
         }
