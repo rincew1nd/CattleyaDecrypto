@@ -25,5 +25,5 @@ public class GiveCluesVm
     /// <summary>
     /// List of clues.
     /// </summary>
-    public Dictionary<int, string> Clues { get; set; }
+    public string[] Clues { get; set; }
 }

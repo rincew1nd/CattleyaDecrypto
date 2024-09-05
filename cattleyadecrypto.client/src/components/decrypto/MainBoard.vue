@@ -6,7 +6,8 @@ import { MatchInfo, Team, joinMatch } from '../services/MatchManagerService'
 import WordsAndClues from "./WordsAndClues.vue";
 import TeamInfo from "./TeamInfo.vue";
 import TeamJoin from "./TeamJoin.vue";
-import {  DecryptoTeamEnum } from "@/components/types/DecryptoTypes";
+import GiveClues from "./GiveClues.vue";
+import {DecryptoMatchState, DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
 
 let loading = ref<boolean>(true);
 const props = defineProps<{ id: string }>();
@@ -21,7 +22,7 @@ joinMatch(props.id).then(() => {
     Loading match data...
   </div>
   <div v-if="MatchInfo" class="content">
-    <p class="title">Round #{{MatchInfo.round}}</p>
+    <p class="title">Round #{{MatchInfo.round}} | {{MatchInfo.state}}</p>
     <div class="split">
       <div class="team">
         <TeamInfo :teamInfo="MatchInfo.teams[DecryptoTeamEnum.Blue]" :color="DecryptoTeamEnum.Blue"/>
@@ -37,6 +38,9 @@ joinMatch(props.id).then(() => {
     <div v-else class="split">
       <TeamJoin :team="DecryptoTeamEnum.Blue" :id="props.id"/>
       <TeamJoin :team="DecryptoTeamEnum.Red" :id="props.id"/>
+    </div>
+    <div v-if="MatchInfo.state === DecryptoMatchState.GiveClues">
+      <GiveClues :team="Team" :id="props.id" :words="MatchInfo.teams[Team].words"/>
     </div>
   </div>
 </template>

@@ -22,14 +22,8 @@ function updateMatch(match:DecryptoMatch) {
 }
 
 function hideWords(match:DecryptoMatch) {
-    if (OppositeTeam.value != DecryptoTeamEnum.Unknown)
-    {
+    if (OppositeTeam.value != DecryptoTeamEnum.Unknown) {
         match.teams[OppositeTeam.value].words = ['#', '#', '#', '#']
-    }
-    else
-    {
-        match.teams[1].words = ['#', '#', '#', '#']
-        match.teams[2].words = ['#', '#', '#', '#']
     }
 }
 
@@ -46,22 +40,21 @@ function calculateSides(match:DecryptoMatch) {
 }
 
 function matchStateUpdated(event:DecryptoMatchState) {
-    if (MatchInfo.value)
-    {
+    if (MatchInfo.value) {
         MatchInfo.value.state = event;
     }
 }
 
 function playerJoined(event:DecryptoPlayerJoined) {
-    if (MatchInfo.value?.teams[event.team])
-    {
+    if (MatchInfo.value?.teams[event.team]) {
         MatchInfo.value.teams[event.team].players[event.playerId] = event.playerName;
+        calculateSides(MatchInfo.value);
+        hideWords(MatchInfo.value);
     }
 }
 
 function prepareClues(event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) {
-    if (MatchInfo.value)
-    {
+    if (MatchInfo.value) {
         MatchInfo.value.temporaryClues = event;
     }
 }

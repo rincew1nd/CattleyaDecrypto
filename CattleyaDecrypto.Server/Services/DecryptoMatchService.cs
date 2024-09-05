@@ -273,9 +273,11 @@ public class DecryptoMatchService : IDecryptoMatchService
 
                     foreach (var temporaryClue in match.TemporaryClues)
                     {
-                        foreach (var clues in temporaryClue.Value.Clues)
+                        for (var i = 0; i < temporaryClue.Value.Clues.Length; i++)
                         {
-                            match.Teams[temporaryClue.Key].Clues[clues.Key].Add(clues.Value);
+                            match.Teams[temporaryClue.Key]
+                                .Clues[temporaryClue.Value.Order[i]]
+                                .Add(temporaryClue.Value.Clues[i]);
                         }
                     }
                     match.TemporaryClues.Clear();

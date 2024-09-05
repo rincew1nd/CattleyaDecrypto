@@ -13,7 +13,7 @@ public class CluesToSolve
     /// <summary>
     /// Clues.
     /// </summary>
-    public Dictionary<int, string> Clues { get; set; }
+    public string[] Clues { get; set; }
     
     /// <summary>
     /// Player ID who riddled clues.

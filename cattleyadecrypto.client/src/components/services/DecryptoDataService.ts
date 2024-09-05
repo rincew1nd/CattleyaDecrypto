@@ -5,6 +5,13 @@ interface AuthInfo {
     name: string
 }
 
+export interface GiveCluesRequest {
+    matchId: string,
+    team: DecryptoTeamEnum,
+    order: number[],
+    clues: string[]
+}
+
 class DecryptoDataService {
     private authInfo:AuthInfo | null = null;
     
@@ -41,6 +48,18 @@ class DecryptoDataService {
 
     async joinTeam(id: string, team: DecryptoTeamEnum): Promise<boolean> {
         let response = await fetch(`/api/decrypto/join-team?matchId=${id}&team=${team}`, {method: "POST"});
+        let json: any = await response.json();
+        return json as boolean;
+    }
+
+    async submitClues(request:GiveCluesRequest) {
+        let response = await fetch(
+            `/api/decrypto/give-clues`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(request)
+            });
         let json: any = await response.json();
         return json as boolean;
     }
