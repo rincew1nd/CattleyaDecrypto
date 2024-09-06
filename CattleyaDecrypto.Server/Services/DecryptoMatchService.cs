@@ -15,15 +15,18 @@ namespace CattleyaDecrypto.Server.Services;
 public class DecryptoMatchService : IDecryptoMatchService
 {
     private readonly IWordPuzzleService _wordPuzzleService;
+    private readonly IOrderGeneratorService _orderGeneratorService;
     private readonly IMemoryCache _memoryCache;
     private readonly IHubContext<DecryptoMessageHub> _decryptoMessageHub;
 
     public DecryptoMatchService(
         IWordPuzzleService wordPuzzleService,
+        IOrderGeneratorService orderGeneratorService,
         IMemoryCache memoryCache,
         IHubContext<DecryptoMessageHub> decryptoMessageHub)
     {
         _wordPuzzleService = wordPuzzleService;
+        _orderGeneratorService = orderGeneratorService;
         _memoryCache = memoryCache;
         _decryptoMessageHub = decryptoMessageHub;
     }
@@ -113,7 +116,7 @@ public class DecryptoMatchService : IDecryptoMatchService
             throw new ApplicationException("Riddler is already assigned!");
         }
 
-        int[] order = [ 3, 2, 0 ];
+        var order = _orderGeneratorService.GetRandomOrder(ref match.AvailableWordOrders);
         var result = match.TemporaryClues.TryAdd(
             playerTeam,
             new CluesToSolve

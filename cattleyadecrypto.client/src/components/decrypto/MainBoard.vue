@@ -7,6 +7,7 @@ import WordsAndClues from "./WordsAndClues.vue";
 import TeamInfo from "./TeamInfo.vue";
 import TeamJoin from "./TeamJoin.vue";
 import GiveClues from "./GiveClues.vue";
+import GuessClues from "./GuessClues.vue";
 import {DecryptoMatchState, DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
 
 let loading = ref<boolean>(true);
@@ -39,6 +40,9 @@ joinMatch(props.id).then(() => { loading.value = false; });
     </div>
     <div v-if="MatchInfo.state === DecryptoMatchState.GiveClues && Team">
       <GiveClues/>
+    </div>
+    <div v-if="MatchInfo.state === DecryptoMatchState.SolveClues || MatchInfo.state === DecryptoMatchState.Intercept">
+      <GuessClues/>
     </div>
   </div>
 </template>

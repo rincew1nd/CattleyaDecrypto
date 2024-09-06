@@ -34,6 +34,7 @@ builder.Services
 builder.Services.AddSingleton<IWordPuzzleService, WordPuzzleService>();
 builder.Services.AddSingleton<INameGeneratorService, NameGeneratorService>();
 builder.Services.AddSingleton<IDecryptoMatchService, DecryptoMatchService>();
+builder.Services.AddSingleton<IOrderGeneratorService, OrderGeneratorService>();
 
 var app = builder.Build();
 

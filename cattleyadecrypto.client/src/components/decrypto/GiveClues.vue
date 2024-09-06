@@ -68,6 +68,7 @@ function assignPlayer() {
 .clues-block-grid > span, .content > p, .content > button {
   text-align: center;
   font-size: 1rem;
+  padding: 5px 0;
 }
 .content > button {
   padding: 5px;
