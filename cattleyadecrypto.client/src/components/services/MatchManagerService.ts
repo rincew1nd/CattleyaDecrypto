@@ -1,10 +1,12 @@
-﻿import {ref} from "vue";
+﻿import {computed, ref} from "vue";
 import {
     DecryptoTeamEnum,
     DecryptoMatchState,
-    type  DecryptoMatch,
-    type DecryptoPlayerJoined,
-    type DecryptoTemporaryClue
+    type DecryptoTeam,
+    type DecryptoMatch,
+    type DecryptoTemporaryClue,
+    type DecryptoPlayerEvent,
+    type DecryptoAssignPlayerEvent,
 } from "@/components/types/DecryptoTypes";
 
 import DecryptoDataService from '../services/DecryptoDataService'
@@ -13,6 +15,11 @@ import DecryptoMessageService from '../services/DecryptoMessageService'
 export const Team = ref<DecryptoTeamEnum>(DecryptoTeamEnum.Unknown);
 export const OppositeTeam = ref<DecryptoTeamEnum>(DecryptoTeamEnum.Unknown);
 export const MatchInfo = ref<DecryptoMatch | null>(null);
+
+export const NeedRiddler = computed(() => 
+    !MatchInfo.value?.temporaryClues[Team.value]);
+export const IsRiddler = computed(() =>
+    MatchInfo.value?.temporaryClues[Team.value]?.riddlerId == DecryptoDataService.getPlayerId());
 
 function updateMatch(match:DecryptoMatch) {
     MatchInfo.value = match;
@@ -35,17 +42,22 @@ function calculateSides(match:DecryptoMatch) {
         }
     });
     OppositeTeam.value = Team.value === DecryptoTeamEnum.Unknown
-        ? DecryptoTeamEnum.Unknown : Team.value === DecryptoTeamEnum.Blue
-            ? DecryptoTeamEnum.Red : DecryptoTeamEnum.Blue;
+        ? DecryptoTeamEnum.Unknown
+        : Team.value === DecryptoTeamEnum.Blue
+            ? DecryptoTeamEnum.Red
+            : DecryptoTeamEnum.Blue;
 }
 
 function matchStateUpdated(event:DecryptoMatchState) {
     if (MatchInfo.value) {
         MatchInfo.value.state = event;
+        if (event === DecryptoMatchState.GiveClues) {
+            MatchInfo.value.temporaryClues = {} as Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
+        }
     }
 }
 
-function playerJoined(event:DecryptoPlayerJoined) {
+function playerJoined(event:DecryptoPlayerEvent) {
     if (MatchInfo.value?.teams[event.team]) {
         MatchInfo.value.teams[event.team].players[event.playerId] = event.playerName;
         calculateSides(MatchInfo.value);
@@ -59,8 +71,21 @@ function prepareClues(event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) {
     }
 }
 
+function assignClueGiver(event:DecryptoAssignPlayerEvent) {
+    if (MatchInfo.value) {
+        MatchInfo.value.temporaryClues[event.team] = {
+            riddlerId: event.playerId,
+            order: event.order
+        } as DecryptoTemporaryClue;
+    }
+}
+
 export async function joinMatch(id: string): Promise<void> {
     try {
+        MatchInfo.value = null;
+        Team.value = DecryptoTeamEnum.Unknown;
+        OppositeTeam.value = DecryptoTeamEnum.Unknown;
+        
         let match = await DecryptoDataService.getMatch(id);
         
         updateMatch(match);
@@ -72,8 +97,11 @@ export async function joinMatch(id: string): Promise<void> {
         DecryptoMessageService.connection.on("StateChanged", (event: DecryptoMatchState) => {
             matchStateUpdated(event);
         });
-        DecryptoMessageService.connection.on("PlayerJoined", (event: DecryptoPlayerJoined) => {
+        DecryptoMessageService.connection.on("PlayerJoined", (event: DecryptoPlayerEvent) => {
             playerJoined(event);
+        });
+        DecryptoMessageService.connection.on("AssignRiddler", (event: DecryptoAssignPlayerEvent) => {
+            assignClueGiver(event);
         });
         DecryptoMessageService.connection.on("SolveClues", (event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) => {
             prepareClues(event);

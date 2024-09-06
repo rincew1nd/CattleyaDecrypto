@@ -1,14 +1,16 @@
 ﻿<script setup lang="ts">
-import { type DecryptoTeam } from '../types/DecryptoTypes'
-const { teamInfo } = defineProps<{ teamInfo: DecryptoTeam }>();
+import { DecryptoTeamEnum } from '../types/DecryptoTypes'
+import { MatchInfo } from '../services/MatchManagerService'
+
+const { team } = defineProps<{ team: DecryptoTeamEnum }>();
 </script>
 
 <template>
-  <div class="words block-border">
-    <div class="block br bl" v-for="(clues, key) in teamInfo.words">
+  <div v-if="MatchInfo" class="words block-border">
+    <div class="block br bl" v-for="(clues, key) in MatchInfo.teams[team].words">
       <span class="header p-10">{{clues}}</span>
       <hr/>
-      <div v-for="clue in teamInfo.clues[key]">
+      <div v-for="clue in MatchInfo.teams[team].clues[key]">
         <p class="p-10">{{clue}}</p>
         <hr/>
       </div>

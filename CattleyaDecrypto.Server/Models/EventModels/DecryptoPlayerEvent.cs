@@ -5,7 +5,7 @@ namespace CattleyaDecrypto.Server.Models.EventModels;
 /// <summary>
 /// Player joined event.
 /// </summary>
-public class DecryptoPlayerJoinedEvent
+public class DecryptoPlayerEvent
 {
     /// <summary>
     /// Player Id.

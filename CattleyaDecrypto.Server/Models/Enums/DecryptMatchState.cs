@@ -11,7 +11,7 @@ public enum DecryptMatchState : short
     WaitingForPlayers = 0,
     
     /// <summary>
-    /// Waiting for clues to be submitted.
+    /// Waiting for players to decide who will give clues and send them.
     /// </summary>
     GiveClues = 1,
     

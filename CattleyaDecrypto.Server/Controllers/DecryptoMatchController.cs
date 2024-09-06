@@ -44,11 +44,20 @@ public class DecryptoMatchController : ControllerBase
             _userContextService.GetId()!.Value,
             _userContextService.GetName()!);
     }
-
-    [HttpPost("give-clues")]
-    public async Task<bool> GiveClues(GiveCluesVm model)
+    
+    [HttpPost("assign-riddler")]
+    public async Task<bool> AssignRiddler([FromQuery] Guid matchId)
     {
-        return await _decryptoMatchService.GiveCluesAsync(model, _userContextService.GetId()!.Value);
+        return await _decryptoMatchService.AssignRiddlerAsync(
+            matchId,
+            _userContextService.GetId()!.Value,
+            _userContextService.GetName()!);
+    }
+
+    [HttpPost("submit-clues")]
+    public async Task SubmitClues(SubmitCluesVm model)
+    {
+        await _decryptoMatchService.SubmitCluesAsync(model, _userContextService.GetId()!.Value);
     }
     
     [HttpPost("solve-clues")]

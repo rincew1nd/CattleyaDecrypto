@@ -1,11 +1,14 @@
 ﻿<script setup lang="ts">
-import {DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
+import { DecryptoTeamEnum } from "@/components/types/DecryptoTypes";
 import DecryptoDataService from "@/components/services/DecryptoDataService";
+import { MatchInfo } from '../services/MatchManagerService'
 
-const { team, id } = defineProps<{ team: DecryptoTeamEnum, id: string }>();
+const { team } = defineProps<{ team: DecryptoTeamEnum }>();
 
 function joinTeam() {
-  DecryptoDataService.joinTeam(id, team);
+  if (MatchInfo.value) {
+    DecryptoDataService.joinTeam(MatchInfo.value.id, team);
+  }
 }
 </script>
 

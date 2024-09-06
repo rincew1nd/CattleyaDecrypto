@@ -11,6 +11,6 @@ public class NameGeneratorService : INameGeneratorService
 
     public string GenerateName()
     {
-        return "Foo Bar";
+        return $"Foo Bar#{Random.Shared.Next(0, 9999):0000}";
     }
 }

@@ -1,45 +1,56 @@
 ﻿<script setup lang="ts">
-import {ref} from "vue";
+import { ref } from "vue";
 
-import type {DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
-import DecryptoDataService, { type GiveCluesRequest } from '../services/DecryptoDataService'
+import { MatchInfo, Team, NeedRiddler, IsRiddler } from '../services/MatchManagerService'
+import DecryptoDataService, { type SubmitCluesRequest } from '../services/DecryptoDataService'
 
-const order = [1, 3, 0];
-const props = defineProps<{ id: string, team:DecryptoTeamEnum, words:Record<number, string> }>();
-
-const isShown = ref(true)
 const clue1 = ref('')
 const clue2 = ref('')
 const clue3 = ref('')
 
 function submitClues() {
-  DecryptoDataService.submitClues({
-    matchId: props.id,
-    team: props.team,
-    order: order,
-    clues: [clue1.value, clue2.value, clue3.value]
-  } as GiveCluesRequest)
-      .then(isSuccessful => {
-        if (isSuccessful) {
-          isShown.value = false;
-        }
-      })
+  if (MatchInfo.value) {
+    DecryptoDataService.submitClues({
+      matchId: MatchInfo.value.id,
+      team: Team.value,
+      order: MatchInfo.value.temporaryClues[Team.value].order,
+      clues: [clue1.value, clue2.value, clue3.value]
+    } as SubmitCluesRequest)
+  }
+}
+
+function assignPlayer() {
+  if (MatchInfo.value) {
+    DecryptoDataService.assignRiddler(MatchInfo.value.id);
+  }
 }
 </script>
 
 <template>
   <hr/>
-  <div v-if="isShown" class="block-center content">
+  <div v-if="NeedRiddler" class="block-center content">
+    <button @click="assignPlayer">Give clues</button>
+  </div>
+  <div v-if="IsRiddler && MatchInfo && (MatchInfo.temporaryClues[Team]?.clues ?? null) === null"
+       class="block-center content">
     <p>Clues:</p>
     <div class="clues-block-grid block-border">
-      <p>{{words[order[0]]}}</p>
+      <span>{{MatchInfo.teams[Team].words[MatchInfo.temporaryClues[Team].order[0] ?? 0]}}</span>
       <input v-model="clue1" placeholder="edit me" />
-      <p>{{words[order[1]]}}</p>
+      <span>{{MatchInfo.teams[Team].words[MatchInfo.temporaryClues[Team].order[1] ?? 0]}}</span>
       <input v-model="clue2" placeholder="edit me" />
-      <p>{{words[order[2]]}}</p>
+      <span>{{MatchInfo.teams[Team].words[MatchInfo.temporaryClues[Team].order[2] ?? 0]}}</span>
       <input v-model="clue3" placeholder="edit me" />
     </div>
     <button @click="submitClues">Submit</button>
+  </div>
+  <div v-if="!NeedRiddler && MatchInfo" class="content">
+    <div v-if="(MatchInfo.temporaryClues[Team]?.clues ?? null) !== null">
+      <p>Waiting for opponent team to make clues...</p>
+    </div>
+    <div v-else-if="!IsRiddler">
+      <p>Waiting for your team to make clues...</p>
+    </div>
   </div>
 </template>
 
@@ -54,8 +65,14 @@ function submitClues() {
   display: grid;
   grid-template-columns: 1fr 3fr;
 }
-.clues-block-grid > p, .content > p, .content > button {
+.clues-block-grid > span, .content > p, .content > button {
   text-align: center;
   font-size: 1rem;
+}
+.content > button {
+  padding: 5px;
+}
+hr {
+  margin: 10px 0;
 }
 </style>

@@ -5,7 +5,7 @@ namespace CattleyaDecrypto.Server.Models.ViewModels;
 /// <summary>
 /// ViewModel for giving clues.
 /// </summary>
-public class GiveCluesVm
+public class SubmitCluesVm
 {
     /// <summary>
     /// Match ID.

@@ -9,7 +9,8 @@ public interface IDecryptoMatchService
     DecryptoMatch CreateMatch();
     DecryptoMatch GetMatch(Guid matchId, Guid userId);
     Task<bool> JoinTeamAsync(Guid matchId, TeamEnum team, Guid userId, string name);
-    Task<bool> GiveCluesAsync(GiveCluesVm model, Guid userId);
+    Task<bool> AssignRiddlerAsync(Guid matchId, Guid userId, string userName);
+    Task SubmitCluesAsync(SubmitCluesVm model, Guid userId);
     Task SolveCluesASync(SolveOrInterceptCluesVm model, Guid userId);
     Task InterceptASync(SolveOrInterceptCluesVm model, Guid userId);
 }

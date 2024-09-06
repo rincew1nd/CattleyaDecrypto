@@ -1,4 +1,4 @@
-﻿import { HubConnectionBuilder } from "@microsoft/signalr";
+﻿import { HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
 
 class DecryptoMessageService {
     public connection = new HubConnectionBuilder()
@@ -8,9 +8,11 @@ class DecryptoMessageService {
     
     public async start() {
         try {
-            await this.connection.start().then(() => {
-                this.setupListeners();
-            });
+            if (this.connection.state !== HubConnectionState.Connected) {
+                await this.connection.start().then(() => {
+                    this.setupListeners();
+                });
+            }
         } catch (err) {
             console.error(err);
             setTimeout(this.start, 5000);

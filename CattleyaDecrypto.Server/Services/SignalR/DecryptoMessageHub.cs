@@ -7,12 +7,6 @@ namespace CattleyaDecrypto.Server.Services.SignalR;
 /// </summary>
 public class DecryptoMessageHub : Hub
 {
-    public override Task OnConnectedAsync()
-    {
-        Console.WriteLine($"{Context.ConnectionId} connected");
-        return base.OnConnectedAsync();
-    }
-    
     /// <summary>
     /// Subscribe to updates of a match.
     /// </summary>

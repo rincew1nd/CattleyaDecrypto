@@ -32,13 +32,17 @@ export interface DecryptoTeam {
 export interface DecryptoTemporaryClue {
     order:         number[];
     clues:         Record<number, string>;
-    riddler:       string;
+    riddlerId:     string;
     isSolved:      boolean;
     isIntercepted: boolean;
 }
 
-export interface DecryptoPlayerJoined {
+export interface DecryptoPlayerEvent {
     playerId:   string;
     playerName: string;
     team:       DecryptoTeamEnum;
+}
+
+export interface DecryptoAssignPlayerEvent extends DecryptoPlayerEvent {
+    order: number[];
 }

@@ -12,35 +12,33 @@ import {DecryptoMatchState, DecryptoTeamEnum} from "@/components/types/DecryptoT
 let loading = ref<boolean>(true);
 const props = defineProps<{ id: string }>();
 
-joinMatch(props.id).then(() => {
-  loading.value = false;
-});
+joinMatch(props.id).then(() => { loading.value = false; });
 </script>
 
 <template>
   <div v-if="loading" class="title">
     Loading match data...
   </div>
-  <div v-if="MatchInfo" class="content">
+  <div v-if="MatchInfo">
     <p class="title">Round #{{MatchInfo.round}} | {{MatchInfo.state}}</p>
     <div class="split">
       <div class="team">
-        <TeamInfo :teamInfo="MatchInfo.teams[DecryptoTeamEnum.Blue]" :color="DecryptoTeamEnum.Blue"/>
+        <TeamInfo :team="DecryptoTeamEnum.Blue"/>
       </div>
       <div class="team">
-        <TeamInfo :teamInfo="MatchInfo.teams[DecryptoTeamEnum.Red]" :color="DecryptoTeamEnum.Red"/>
+        <TeamInfo :team="DecryptoTeamEnum.Red"/>
       </div>
     </div>
     <div v-if="Team" class="split">
-      <WordsAndClues :teamInfo="MatchInfo.teams[DecryptoTeamEnum.Blue]"/>
-      <WordsAndClues :teamInfo="MatchInfo.teams[DecryptoTeamEnum.Red]"/>
+      <WordsAndClues :team="DecryptoTeamEnum.Blue"/>
+      <WordsAndClues :team="DecryptoTeamEnum.Red"/>
     </div>
-    <div v-else class="split">
-      <TeamJoin :team="DecryptoTeamEnum.Blue" :id="props.id"/>
-      <TeamJoin :team="DecryptoTeamEnum.Red" :id="props.id"/>
+    <div v-if="Team == DecryptoTeamEnum.Unknown" class="split">
+      <TeamJoin :team="DecryptoTeamEnum.Blue"/>
+      <TeamJoin :team="DecryptoTeamEnum.Red"/>
     </div>
-    <div v-if="MatchInfo.state === DecryptoMatchState.GiveClues">
-      <GiveClues :team="Team" :id="props.id" :words="MatchInfo.teams[Team].words"/>
+    <div v-if="MatchInfo.state === DecryptoMatchState.GiveClues && Team">
+      <GiveClues/>
     </div>
   </div>
 </template>

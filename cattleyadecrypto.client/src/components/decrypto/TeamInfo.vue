@@ -1,19 +1,20 @@
 ﻿<script setup lang="ts">
-import { DecryptoTeamEnum, type DecryptoTeam } from '../types/DecryptoTypes'
+import { DecryptoTeamEnum } from '../types/DecryptoTypes'
+import { MatchInfo } from '../services/MatchManagerService'
 
-const { teamInfo, color } = defineProps<{ teamInfo: DecryptoTeam, color: DecryptoTeamEnum }>();
+const { team } = defineProps<{ team: DecryptoTeamEnum }>();
 </script>
 
 <template>
   <div class="block-border">
-    <p :class="[color == DecryptoTeamEnum.Blue ? 'blue' : 'red', 'name']">TEAM {{color}}</p>
+    <p :class="[team == DecryptoTeamEnum.Blue ? 'blue' : 'red', 'name']">TEAM {{team}}</p>
     <hr/>
-    <div class="info">
+    <div v-if="MatchInfo" class="info">
       <div class="br block">
         <p class="header">Players</p>
         <hr/>
         <div class="block-center">
-          <p v-for="player in teamInfo?.players">{{player}}</p>
+          <p v-for="player in MatchInfo.teams[team].players">{{player}}</p>
         </div>
       </div>
       <div class="bl block">
@@ -22,8 +23,8 @@ const { teamInfo, color } = defineProps<{ teamInfo: DecryptoTeam, color: Decrypt
           <hr/>
         </div>
         <div class="block-center">
-          <p>Interceptions: {{ teamInfo.interceptionCount }}</p>
-          <p>Miscommunications: {{ teamInfo.miscommunicationCount }}</p>
+          <p>Interceptions: {{ MatchInfo.teams[team].interceptionCount }}</p>
+          <p>Miscommunications: {{ MatchInfo.teams[team].miscommunicationCount }}</p>
         </div>
       </div>
     </div>

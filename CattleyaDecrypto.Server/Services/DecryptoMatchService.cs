@@ -1,5 +1,4 @@
-﻿using CattleyaDecrypto.Server.Architecture;
-using CattleyaDecrypto.Server.Models.Enums;
+﻿using CattleyaDecrypto.Server.Models.Enums;
 using CattleyaDecrypto.Server.Models.EventModels;
 using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Models.ViewModels;
@@ -81,7 +80,7 @@ public class DecryptoMatchService : IDecryptoMatchService
         match.Teams[team].Players.Add(userId, userName);
 
         await _decryptoMessageHub.Clients.Group(match.Id.ToString())
-            .SendAsync("PlayerJoined", new DecryptoPlayerJoinedEvent()
+            .SendAsync("PlayerJoined", new DecryptoPlayerEvent()
             {
                 PlayerId = userId,
                 PlayerName = userName,
@@ -93,37 +92,77 @@ public class DecryptoMatchService : IDecryptoMatchService
     }
 
     /// <summary>
-    /// Give clues.
+    /// Choose riddler.
     /// </summary>
-    public async Task<bool> GiveCluesAsync(GiveCluesVm model, Guid userId)
+    public async Task<bool> AssignRiddlerAsync(Guid matchId, Guid userId, string userName)
     {
-        var match = GetMatchFromCache(model.MatchId);
-
+        var match = GetMatchFromCache(matchId);
         if (match.State != DecryptMatchState.GiveClues)
         {
             throw new ApplicationException($"Wrong state for 'Give clues' action - {match.State}");
         }
 
-        AssertPlayerInTeam(match, model.Team, userId);
+        var playerTeam = GetPlayerTeam(match, userId);
+        if (playerTeam == default)
+        {
+            throw new ApplicationException("Player is not in a team");
+        }
 
+        if (match.TemporaryClues.ContainsKey(playerTeam))
+        {
+            throw new ApplicationException("Riddler is already assigned!");
+        }
+
+        int[] order = [ 3, 2, 0 ];
         var result = match.TemporaryClues.TryAdd(
-            model.Team,
+            playerTeam,
             new CluesToSolve
             {
-                Order = model.Order,
-                Clues = model.Clues,
+                Order = order,
                 RiddlerId = userId
             });
 
         if (result)
         {
-            if (await UpdateMatchState(match, DecryptMatchState.GiveClues) && match.State == DecryptMatchState.SolveClues)
-            {
-                await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("SolveClues", match.TemporaryClues);
-            }
+            await _decryptoMessageHub.Clients
+                .Group(match.Id.ToString())
+                .SendAsync("AssignRiddler", new DecryptoAssignRiddlerEvent()
+                {
+                    PlayerId = userId,
+                    PlayerName = userName,
+                    Team = playerTeam,
+                    Order = order
+                });
+            await UpdateMatchState(match, DecryptMatchState.GiveClues);
         }
         
         return result;
+    }
+    
+    /// <summary>
+    /// Give clues.
+    /// </summary>
+    public async Task SubmitCluesAsync(SubmitCluesVm model, Guid userId)
+    {
+        var match = GetMatchFromCache(model.MatchId);
+
+        if (match.State is not DecryptMatchState.GiveClues)
+        {
+            throw new ApplicationException($"Wrong state for 'Solve clues' action - {match.State}");
+        }
+
+        AssertPlayerInTeam(match, model.Team, userId);
+
+        if (match.TemporaryClues.ContainsKey(model.Team) && (match.TemporaryClues[model.Team].Clues?.Any() ?? false))
+        {
+            throw new ApplicationException($"Clues are already been given - {match.TemporaryClues[model.Team].Clues}");
+        }
+
+        match.TemporaryClues[model.Team].Clues = model.Clues;
+        
+        await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("SolveClues", match.TemporaryClues);
+        
+        await UpdateMatchState(match, DecryptMatchState.GiveClues);
     }
 
     /// <summary>
@@ -160,7 +199,7 @@ public class DecryptoMatchService : IDecryptoMatchService
     public async Task InterceptASync(SolveOrInterceptCluesVm model, Guid userId)
     {
         var enemyTeam = OppositeTeam(model.Team);
-        if (!enemyTeam.HasValue)
+        if (enemyTeam == TeamEnum.Unknown)
         {
             throw new ApplicationException("Player is not in a team");
         }
@@ -174,12 +213,12 @@ public class DecryptoMatchService : IDecryptoMatchService
         
         AssertPlayerInTeam(match, model.Team, userId);
         
-        if (!match.TemporaryClues.TryGetValue(enemyTeam.Value, out var cluesToSolve))
+        if (!match.TemporaryClues.TryGetValue(enemyTeam, out var cluesToSolve))
         {
             throw new ApplicationException("Could not solve unriddle clues");
         }
 
-        match.TemporaryClues[enemyTeam.Value].IsIntercepted = true;
+        match.TemporaryClues[enemyTeam].IsIntercepted = true;
         if (cluesToSolve.Order == model.Order)
         {
             match.Teams[model.Team].InterceptionCount++;
@@ -210,6 +249,17 @@ public class DecryptoMatchService : IDecryptoMatchService
             throw new ApplicationException("Player is in opposite team.");
         }
     }
+    
+    /// <summary>
+    /// Assert that the player is in the right team.
+    /// </summary>
+    private TeamEnum GetPlayerTeam(DecryptoMatch match, Guid userId)
+    {
+        return match.Teams
+            .Where(t => t.Value.Players.ContainsKey(userId))
+            .Select(t => t.Key)
+            .FirstOrDefault();
+    }
 
     /// <summary>
     /// Update a state of a match. Notify players about the change.
@@ -231,7 +281,8 @@ public class DecryptoMatchService : IDecryptoMatchService
             }
             case DecryptMatchState.GiveClues:
             {
-                if (match.TemporaryClues.Count == 2)
+                if (match.TemporaryClues.Keys.Count == 2
+                    && match.TemporaryClues.All(tc => tc.Value.Clues?.Any() ?? false))
                 {
                     match.State = DecryptMatchState.SolveClues;
                     stateChanged = true;
@@ -300,13 +351,13 @@ public class DecryptoMatchService : IDecryptoMatchService
     /// <summary>
     /// Get opposite teams. If 'Unknown', both are opposite.
     /// </summary>
-    private TeamEnum? OppositeTeam(TeamEnum team)
+    private TeamEnum OppositeTeam(TeamEnum team)
     {
         return team switch
         {
             TeamEnum.Blue => TeamEnum.Red,
             TeamEnum.Red => TeamEnum.Blue,
-            _ => null
+            _ => TeamEnum.Unknown
         };
     }
 }

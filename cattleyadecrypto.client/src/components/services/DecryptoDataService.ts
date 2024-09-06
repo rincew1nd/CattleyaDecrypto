@@ -5,7 +5,7 @@ interface AuthInfo {
     name: string
 }
 
-export interface GiveCluesRequest {
+export interface SubmitCluesRequest {
     matchId: string,
     team: DecryptoTeamEnum,
     order: number[],
@@ -51,10 +51,16 @@ class DecryptoDataService {
         let json: any = await response.json();
         return json as boolean;
     }
+    
+    async assignRiddler(id: string): Promise<boolean> {
+        let response = await fetch(`/api/decrypto/assign-riddler?matchId=${id}`, {method: "POST"});
+        let json: any = await response.json();
+        return json as boolean;
+    }
 
-    async submitClues(request:GiveCluesRequest) {
+    async submitClues(request:SubmitCluesRequest) {
         let response = await fetch(
-            `/api/decrypto/give-clues`,
+            `/api/decrypto/submit-clues`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
