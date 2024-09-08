@@ -1,4 +1,5 @@
-﻿using CattleyaDecrypto.Server.Models.EventModels;
+﻿using CattleyaDecrypto.Server.Models.Enums;
+using CattleyaDecrypto.Server.Models.EventModels;
 using CattleyaDecrypto.Server.Services.Interfaces;
 using CattleyaDecrypto.Server.Services.SignalR;
 using MediatR;
@@ -26,19 +27,23 @@ public class ChangePlayerNameHandler : DecryptoBaseHandler, IRequestHandler<Chan
             var userInfo = await _userContextService.GetUserInfo();
 
             var team = match.Teams.FirstOrDefault(t => t.Value.Players.ContainsKey(userInfo.Id));
-            team.Value.Players[userInfo.Id] = userInfo.Name;
 
-            await _decryptoMessageHub.Clients
-                .Group(request.MatchId.ToString())
-                .SendAsync(
-                    "NameChanged",
-                    new DecryptoPlayerEvent
-                    {
-                        PlayerId = userInfo.Id,
-                        PlayerName = userInfo.Name,
-                        Team = team.Key
-                    },
-                    cancellationToken);
+            if (team.Key != DecryptoTeamEnum.Unknown)
+            {
+                team.Value.Players[userInfo.Id] = userInfo.Name;
+
+                await _decryptoMessageHub.Clients
+                    .Group(request.MatchId.ToString())
+                    .SendAsync(
+                        "NameChanged",
+                        new DecryptoPlayerEvent
+                        {
+                            PlayerId = userInfo.Id,
+                            PlayerName = userInfo.Name,
+                            Team = team.Key
+                        },
+                        cancellationToken);
+            }
         });
     }
 }

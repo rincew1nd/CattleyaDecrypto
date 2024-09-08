@@ -41,13 +41,13 @@ public class AssignRiddlerHandler : DecryptoBaseHandler, IRequestHandler<AssignR
                 throw new ApplicationException("Player is not in a team");
             }
 
-            if (match.TemporaryClues.ContainsKey(playerTeam))
+            if (match.RoundClues.ContainsKey(playerTeam))
             {
                 throw new ApplicationException("Riddler is already assigned!");
             }
 
             var order = _orderGeneratorService.GetRandomOrder(ref match.AvailableWordOrders);
-            var result = match.TemporaryClues.TryAdd(
+            var result = match.RoundClues.TryAdd(
                 playerTeam,
                 new CluesToSolve
                 {
@@ -61,14 +61,16 @@ public class AssignRiddlerHandler : DecryptoBaseHandler, IRequestHandler<AssignR
                     .Group(match.Id.ToString())
                     .SendAsync(
                         "AssignRiddler",
-                        new DecryptoAssignRiddlerEvent()
+                        new DecryptoPlayerEvent()
                         {
                             PlayerId = userInfo.Id,
                             PlayerName = userInfo.Name,
-                            Team = playerTeam,
-                            Order = order
+                            Team = playerTeam
                         },
                         cancellationToken);
+
+                await SendSensitiveInfoAsync(_userContextService.GetId(), match, playerTeam, cancellationToken);
+                
                 await UpdateMatchState(match, DecryptMatchState.GiveClues);
             }
         });

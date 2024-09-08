@@ -17,7 +17,8 @@ function newGameButton() {
 function changeUserEvent() {
   DecryptoDataService
       .login(newName.value)
-      .then(() => useEventsBus().emit('NameChanged', null));
+      .then(() => useEventsBus().emit('NameChanged', null))
+      .then(() => showModal.value = false);
 }
 </script>
 
@@ -62,6 +63,7 @@ function changeUserEvent() {
   min-width: 100px;
   text-align: center;
   font-size: 1rem;
+  padding: 0 20px;
 }
 .modal-mask {
   position: fixed;

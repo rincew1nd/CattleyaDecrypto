@@ -13,6 +13,12 @@ export interface SubmitCluesRequest {
     clues: string[]
 }
 
+export interface SolveCluesRequest {
+    matchId: string,
+    team: DecryptoTeamEnum,
+    order: number[]
+}
+
 class DecryptoDataService {
     
     constructor() {
@@ -52,6 +58,28 @@ class DecryptoDataService {
     async submitClues(request:SubmitCluesRequest) {
         let response = await fetch(
             `/api/decrypto/submit-clues`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(request)
+            });
+        return response.status === 200;
+    }
+
+    async solveClues(request:SolveCluesRequest) {
+        let response = await fetch(
+            `/api/decrypto/solve-clues`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(request)
+            });
+        return response.status === 200;
+    }
+
+    async intercept(request:SolveCluesRequest) {
+        let response = await fetch(
+            `/api/decrypto/intercept`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

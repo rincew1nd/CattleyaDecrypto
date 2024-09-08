@@ -30,12 +30,12 @@ public class SolveCluesHandler : DecryptoBaseHandler, IRequestHandler<SolveClues
 
             AssertPlayerInTeam(match, request.Team, _userContextService.GetId());
 
-            if (!match.TemporaryClues.TryGetValue(request.Team, out var cluesToSolve))
+            if (!match.RoundClues.TryGetValue(request.Team, out var cluesToSolve))
             {
                 throw new ApplicationException("Could not solve unriddle clues");
             }
 
-            match.TemporaryClues[request.Team].IsSolved = true;
+            match.RoundClues[request.Team].IsSolved = true;
             if (cluesToSolve.Order != request.Order)
             {
                 match.Teams[request.Team].MiscommunicationCount++;

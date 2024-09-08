@@ -18,24 +18,6 @@ public class GetMatchHandler : DecryptoBaseHandler, IRequestHandler<GetMatchQuer
     public async Task<DecryptoMatchResponse> Handle(GetMatchQuery request, CancellationToken cancellationToken)
     {
         var match = await GetMatchAsync(request.MatchId);
-
-        var response = new DecryptoMatchResponse()
-        {
-            Id = match.Id,
-            Round = match.Round,
-            State = match.State,
-            Teams = new Dictionary<int, CreateNewMatchTeamResponse>()
-        };
-        foreach (var (key, value) in match.Teams)
-        {
-            response.Teams.Add((int)key, new CreateNewMatchTeamResponse()
-            {
-                InterceptionCount = value.InterceptionCount,
-                MiscommunicationCount = value.MiscommunicationCount,
-                Players = value.Players
-            });
-        }
-        
-        return response;
+        return new DecryptoMatchResponse(match);
     }
 }

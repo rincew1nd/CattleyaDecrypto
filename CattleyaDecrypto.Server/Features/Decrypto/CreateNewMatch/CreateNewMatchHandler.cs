@@ -47,23 +47,6 @@ public class CreateNewMatchHandler : IRequestHandler<CreateNewMatchCommand, Decr
 
         await _cacheService.SetRecordAsync(_cacheService.GetKey<Match>(match.Id), match);
 
-        var response = new DecryptoMatchResponse()
-        {
-            Id = match.Id,
-            Round = match.Round,
-            State = match.State,
-            Teams = new Dictionary<int, CreateNewMatchTeamResponse>()
-        };
-        foreach (var (key, value) in match.Teams)
-        {
-            response.Teams.Add((int)key, new CreateNewMatchTeamResponse()
-            {
-                InterceptionCount = value.InterceptionCount,
-                MiscommunicationCount = value.MiscommunicationCount,
-                Players = value.Players
-            });
-        }
-        
-        return response;
+        return new DecryptoMatchResponse(match);
     }
 }

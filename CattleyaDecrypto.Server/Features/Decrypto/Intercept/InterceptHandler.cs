@@ -37,18 +37,18 @@ public class InterceptHandler : DecryptoBaseHandler, IRequestHandler<InterceptCo
 
             AssertPlayerInTeam(match, request.Team, _userContextService.GetId());
 
-            if (!match.TemporaryClues.TryGetValue(oppositeTeam, out var cluesToSolve))
+            if (!match.RoundClues.TryGetValue(oppositeTeam, out var cluesToSolve))
             {
                 throw new ApplicationException("Could not solve unriddle clues");
             }
 
-            match.TemporaryClues[oppositeTeam].IsIntercepted = true;
+            match.RoundClues[oppositeTeam].IsIntercepted = true;
             if (cluesToSolve.Order == request.Order)
             {
                 match.Teams[request.Team].InterceptionCount++;
             }
 
-            await UpdateMatchState(match, DecryptMatchState.SolveClues);
+            await UpdateMatchState(match, DecryptMatchState.Intercept);
 
             if (match.State == DecryptMatchState.Finished)
             {

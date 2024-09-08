@@ -18,7 +18,7 @@ export interface DecryptoMatch {
     state:          DecryptoMatchState;
     wonTeam?:       DecryptoTeamEnum;
     teams:          Record<DecryptoTeamEnum, DecryptoTeam>;
-    temporaryClues: Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
+    roundClues: Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
 }
 
 export interface DecryptoTeam {
@@ -43,6 +43,7 @@ export interface DecryptoPlayerEvent {
     team:       DecryptoTeamEnum;
 }
 
-export interface DecryptoAssignPlayerEvent extends DecryptoPlayerEvent {
-    order: number[];
+export interface DecryptoSensitiveInfoEvent {
+    words:          string[];
+    roundWordOrder: number[];
 }

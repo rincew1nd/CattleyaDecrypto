@@ -6,7 +6,7 @@ const { team } = defineProps<{ team: DecryptoTeamEnum }>();
 </script>
 
 <template>
-  <div class="block-border">
+  <div class="block-border team-block">
     <p :class="[team == DecryptoTeamEnum.Blue ? 'blue' : 'red', 'name']">TEAM {{team}}</p>
     <hr/>
     <div v-if="MatchInfo" class="info">
@@ -32,6 +32,10 @@ const { team } = defineProps<{ team: DecryptoTeamEnum }>();
 </template>
 
 <style scoped>
+.team-block {
+  height: 100%;
+  margin: 0 10px;
+}
 .info {
   display: grid;
   grid-template-columns: 1fr 1fr;

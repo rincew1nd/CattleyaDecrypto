@@ -30,20 +30,32 @@ public class SubmitCluesHandler : DecryptoBaseHandler, IRequestHandler<SubmitClu
 
             AssertPlayerInTeam(match, request.Team, _userContextService.GetId());
 
-            if (match.TemporaryClues.ContainsKey(request.Team) &&
-                (match.TemporaryClues[request.Team].Clues?.Any() ?? false))
+            if (match.RoundClues.ContainsKey(request.Team) &&
+                (match.RoundClues[request.Team].Clues?.Any() ?? false))
             {
                 throw new ApplicationException(
-                    $"Clues are already been given - {match.TemporaryClues[request.Team].Clues}");
+                    $"Clues are already been given - {match.RoundClues[request.Team].Clues}");
             }
 
-            match.TemporaryClues[request.Team].Clues = request.Clues;
+            match.RoundClues[request.Team].Clues = request.Clues;
+
+            await UpdateMatchState(match, DecryptMatchState.GiveClues);
 
             await _decryptoMessageHub.Clients
                 .Group(match.Id.ToString())
-                .SendAsync("SolveClues", match.TemporaryClues, cancellationToken);
-
-            await UpdateMatchState(match, DecryptMatchState.GiveClues);
+                .SendAsync(
+                    "SolveClues",
+                    match.RoundClues
+                        .ToDictionary(
+                            kv => kv.Key,
+                            kv => new DecryptoMatchCluesResponse()
+                            {
+                                RiddlerId = kv.Value.RiddlerId,
+                                IsIntercepted = kv.Value.IsIntercepted,
+                                IsSolved = kv.Value.IsSolved,
+                                Clues = kv.Value.Clues
+                            }),
+                    cancellationToken);
         });
     }
 }

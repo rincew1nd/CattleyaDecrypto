@@ -23,15 +23,10 @@ public class PlayerJoinedMatchHandler : DecryptoBaseHandler, IRequestHandler<Pla
         var match = await GetMatchAsync(request.MatchId);
 
         var team = match.Teams.FirstOrDefault(t => t.Value.Players.ContainsKey(_userContextService.GetId()));
-
+        
         if (team.Key != default)
         {
-            await _decryptoMessageHub.Clients
-                .User(_userContextService.GetId().ToString())
-                .SendAsync(
-                    "SetTeamWords",
-                    match.Teams[team.Key].Words,
-                    cancellationToken);
+            await SendSensitiveInfoAsync(_userContextService.GetId(), match, team.Key, cancellationToken);
         }
     }
 }

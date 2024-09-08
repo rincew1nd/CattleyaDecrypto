@@ -14,7 +14,7 @@ public class CacheService : ICacheService
     private readonly IDistributedCache _cache;
     private readonly RedLockFactory _redLockFactory;
 
-    private JsonSerializerOptions _serializerOptions = new()
+    private readonly JsonSerializerOptions _serializerOptions = new()
     {
         Converters = { new JsonDictionaryTKeyEnumTValueConverter() }
     };

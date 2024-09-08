@@ -40,5 +40,5 @@ public class DecryptoMatch
     /// <summary>
     /// Clues to solve.
     /// </summary>
-    public Dictionary<DecryptoTeamEnum, CluesToSolve> TemporaryClues { get; set; } = new();
+    public Dictionary<DecryptoTeamEnum, CluesToSolve> RoundClues { get; set; } = new();
 }

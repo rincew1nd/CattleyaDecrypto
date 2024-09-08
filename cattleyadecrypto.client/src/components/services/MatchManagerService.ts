@@ -5,7 +5,7 @@ import {
     type DecryptoMatch,
     type DecryptoTemporaryClue,
     type DecryptoPlayerEvent,
-    type DecryptoAssignPlayerEvent,
+    type DecryptoSensitiveInfoEvent
 } from "@/components/types/DecryptoTypes";
 
 import DecryptoDataService from '../services/DecryptoDataService'
@@ -16,14 +16,14 @@ export const OppositeTeam = ref<DecryptoTeamEnum>(DecryptoTeamEnum.Unknown);
 export const MatchInfo = ref<DecryptoMatch | null>(null);
 
 export const NeedRiddler = computed(() => 
-    !MatchInfo.value?.temporaryClues[Team.value]);
+    !MatchInfo.value?.roundClues[Team.value]);
 export const IsRiddler = computed(() =>
-    MatchInfo.value?.temporaryClues[Team.value]?.riddlerId == DecryptoDataService.userAuthData.value?.id);
+    MatchInfo.value?.roundClues[Team.value]?.riddlerId == DecryptoDataService.userAuthData.value?.id);
 
 function updateMatch(match:DecryptoMatch) {
     MatchInfo.value = match;
     calculateSides(match);
-    hideWords(match)
+    hideWords(match);
     console.log('Match state updated', MatchInfo, Team);
 }
 
@@ -50,9 +50,6 @@ function calculateSides(match:DecryptoMatch) {
 function matchStateUpdated(event:DecryptoMatchState) {
     if (MatchInfo.value) {
         MatchInfo.value.state = event;
-        if (event === DecryptoMatchState.GiveClues) {
-            MatchInfo.value.temporaryClues = {} as Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
-        }
     }
 }
 
@@ -66,22 +63,22 @@ function playerJoined(event:DecryptoPlayerEvent) {
 
 function prepareClues(event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) {
     if (MatchInfo.value) {
-        MatchInfo.value.temporaryClues = event;
+        MatchInfo.value.roundClues = event;
     }
 }
 
-function assignClueGiver(event:DecryptoAssignPlayerEvent) {
+function assignClueGiver(event:DecryptoPlayerEvent) {
     if (MatchInfo.value) {
-        MatchInfo.value.temporaryClues[event.team] = {
+        MatchInfo.value.roundClues[event.team] = {
             riddlerId: event.playerId,
-            order: event.order
         } as DecryptoTemporaryClue;
     }
 }
 
-function setTeamWords(event: string[]) {
+function setSensitiveInfo(event: DecryptoSensitiveInfoEvent) {
     if (MatchInfo.value) {
-        MatchInfo.value.teams[Team.value].words = event;
+        MatchInfo.value.teams[Team.value].words = event.words;
+        MatchInfo.value.roundClues[Team.value].order = event.roundWordOrder;
     }
 }
 
@@ -109,10 +106,10 @@ export async function joinMatch(id: string): Promise<void> {
         DecryptoMessageService.connection.on("PlayerJoined", (event: DecryptoPlayerEvent) => {
             playerJoined(event);
         });
-        DecryptoMessageService.connection.on("SetTeamWords", (event: string[]) => {
-            setTeamWords(event);
+        DecryptoMessageService.connection.on("SensitiveInfo", (event: DecryptoSensitiveInfoEvent) => {
+            setSensitiveInfo(event);
         });
-        DecryptoMessageService.connection.on("AssignRiddler", (event: DecryptoAssignPlayerEvent) => {
+        DecryptoMessageService.connection.on("AssignRiddler", (event: DecryptoPlayerEvent) => {
             assignClueGiver(event);
         });
         DecryptoMessageService.connection.on("SolveClues", (event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) => {

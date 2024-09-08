@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using CattleyaDecrypto.Server.Models.Enums;
+using CattleyaDecrypto.Server.Models.EventModels;
 using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Services.Interfaces;
 using CattleyaDecrypto.Server.Services.SignalR;
@@ -78,7 +79,7 @@ public abstract class DecryptoBaseHandler
         {
             case DecryptMatchState.WaitingForPlayers:
             {
-                if (match.Teams.All(t => t.Value.Players.Any()))
+                if (match.Teams.All(t => t.Value.Players.Any()) && match.State == DecryptMatchState.WaitingForPlayers)
                 {
                     match.State = DecryptMatchState.GiveClues;
                     stateChanged = true;
@@ -87,8 +88,8 @@ public abstract class DecryptoBaseHandler
             }
             case DecryptMatchState.GiveClues:
             {
-                if (match.TemporaryClues.Keys.Count == 2
-                    && match.TemporaryClues.All(tc => tc.Value.Clues?.Any() ?? false))
+                if (match.RoundClues.Keys.Count == 2
+                    && match.RoundClues.All(tc => tc.Value.Clues?.Any() ?? false))
                 {
                     match.State = DecryptMatchState.SolveClues;
                     stateChanged = true;
@@ -97,7 +98,7 @@ public abstract class DecryptoBaseHandler
             }
             case DecryptMatchState.SolveClues:
             {
-                if (match.TemporaryClues.All(x => x.Value.IsSolved))
+                if (match.RoundClues.All(x => x.Value.IsSolved))
                 {
                     if (match.Round == 1)
                     {
@@ -111,7 +112,7 @@ public abstract class DecryptoBaseHandler
             }
             case DecryptMatchState.Intercept:
             {
-                if (match.TemporaryClues.All(x => x.Value.IsIntercepted))
+                if (match.RoundClues.All(x => x.Value.IsIntercepted))
                 {
                     DecryptoTeamEnum wonTeam = DecryptoTeamEnum.Unknown;
                     if (match.Teams[DecryptoTeamEnum.Blue].MiscommunicationCount == 2 ||
@@ -130,17 +131,21 @@ public abstract class DecryptoBaseHandler
                         ? DecryptMatchState.Finished
                         : DecryptMatchState.GiveClues;
 
-                    foreach (var temporaryClue in match.TemporaryClues)
+                    foreach (var temporaryClue in match.RoundClues)
                     {
                         for (var i = 0; i < temporaryClue.Value.Clues.Length; i++)
                         {
+                            if (!match.Teams[temporaryClue.Key].Clues.ContainsKey(temporaryClue.Value.Order[i]))
+                            {
+                                match.Teams[temporaryClue.Key].Clues[temporaryClue.Value.Order[i]] = new();
+                            }
                             match
                                 .Teams[temporaryClue.Key]
                                 .Clues[temporaryClue.Value.Order[i]]
                                 .Add(temporaryClue.Value.Clues[i]);
                         }
                     }
-                    match.TemporaryClues.Clear();
+                    match.RoundClues.Clear();
                     
                     stateChanged = true;
                 }
@@ -165,5 +170,26 @@ public abstract class DecryptoBaseHandler
             DecryptoTeamEnum.Red => DecryptoTeamEnum.Blue,
             _ => DecryptoTeamEnum.Unknown
         };
+    }
+
+    /// <summary>
+    /// Send sensitive info to clients.
+    /// </summary>
+    protected async Task SendSensitiveInfoAsync(
+        Guid userId, DecryptoMatch match, DecryptoTeamEnum team, CancellationToken cancellationToken)
+    {
+        await _decryptoMessageHub.Clients
+            .User(userId.ToString())
+            .SendAsync(
+                "SensitiveInfo",
+                new DecryptoSensitiveInfoEvent()
+                {
+                    Words = match.Teams[team].Words,
+                    RoundWordOrder = match.RoundClues.ContainsKey(team) &&
+                                     match.RoundClues[team].RiddlerId == userId
+                        ? match.RoundClues[team].Order
+                        : []
+                },
+                cancellationToken);
     }
 }

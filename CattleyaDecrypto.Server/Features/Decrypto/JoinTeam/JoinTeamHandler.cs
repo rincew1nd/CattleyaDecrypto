@@ -44,12 +44,7 @@ public class JoinTeamHandler : DecryptoBaseHandler, IRequestHandler<JoinTeamComm
                     },
                     cancellationToken);
             
-            
-            await _decryptoMessageHub.Clients.User(userInfo.Id.ToString())
-                .SendAsync(
-                    "SetTeamWords", 
-                    match.Teams[request.team].Words,
-                    cancellationToken);
+            await SendSensitiveInfoAsync(_userContextService.GetId(), match, request.team, cancellationToken);
 
             await UpdateMatchState(match, DecryptMatchState.WaitingForPlayers);
         });
