@@ -1,7 +1,13 @@
-﻿using CattleyaDecrypto.Server.Models.Enums;
-using CattleyaDecrypto.Server.Models.Models;
-using CattleyaDecrypto.Server.Models.ViewModels;
-using CattleyaDecrypto.Server.Services.Interfaces;
+﻿using CattleyaDecrypto.Server.Features.Decrypto;
+using CattleyaDecrypto.Server.Features.Decrypto.AssignRiddler;
+using CattleyaDecrypto.Server.Features.Decrypto.CreateNewMatch;
+using CattleyaDecrypto.Server.Features.Decrypto.GetMatch;
+using CattleyaDecrypto.Server.Features.Decrypto.Intercept;
+using CattleyaDecrypto.Server.Features.Decrypto.JoinTeam;
+using CattleyaDecrypto.Server.Features.Decrypto.SolveClues;
+using CattleyaDecrypto.Server.Features.Decrypto.SubmitClues;
+using CattleyaDecrypto.Server.Models.Enums;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,63 +18,52 @@ namespace CattleyaDecrypto.Server.Controllers;
 [Route("api/decrypto")]
 public class DecryptoMatchController : ControllerBase
 {
-    private readonly IUserContextService _userContextService;
-    private readonly IDecryptoMatchService _decryptoMatchService;
+    private readonly IMediator _mediator;
 
-    public DecryptoMatchController(
-        IUserContextService userContextService,
-        IDecryptoMatchService decryptoMatchService)
+    public DecryptoMatchController(IMediator mediator)
     {
-        _userContextService = userContextService;
-        _decryptoMatchService = decryptoMatchService;
+        _mediator = mediator;
     }
     
     [HttpPost("create-match")]
-    public DecryptoMatch CreateMatch()
+    public Task<DecryptoMatchResponse> CreateMatch()
     {
-        return _decryptoMatchService.CreateMatch();
+        return _mediator.Send(new CreateNewMatchCommand());
     }
     
     [HttpGet("get-match")]
-    public DecryptoMatch GetMatch([FromQuery] Guid matchId)
+    public Task<DecryptoMatchResponse> GetMatch([FromQuery] Guid matchId)
     {
-        return _decryptoMatchService.GetMatch(matchId, _userContextService.GetId()!.Value);
+        return _mediator.Send(new GetMatchQuery(matchId));
     }
     
     [HttpPost("join-team")]
-    public async Task<bool> JoinTeam([FromQuery] Guid matchId, [FromQuery] TeamEnum team)
+    public Task JoinTeam([FromQuery] Guid matchId, [FromQuery] DecryptoTeamEnum team)
     {
-        return await _decryptoMatchService.JoinTeamAsync(
-            matchId,
-            team,
-            _userContextService.GetId()!.Value,
-            _userContextService.GetName()!);
+        return _mediator.Send(new JoinTeamCommand(matchId, team));
     }
     
     [HttpPost("assign-riddler")]
-    public async Task<bool> AssignRiddler([FromQuery] Guid matchId)
+    public Task AssignRiddler([FromQuery] Guid matchId)
     {
-        return await _decryptoMatchService.AssignRiddlerAsync(
-            matchId,
-            _userContextService.GetId()!.Value,
-            _userContextService.GetName()!);
+        return _mediator.Send(new AssignRiddlerCommand(matchId));
     }
 
     [HttpPost("submit-clues")]
-    public async Task SubmitClues(SubmitCluesVm model)
+    public Task SubmitClues(SubmitCluesCommand model)
     {
-        await _decryptoMatchService.SubmitCluesAsync(model, _userContextService.GetId()!.Value);
+        return _mediator.Send(model);
     }
     
     [HttpPost("solve-clues")]
-    public async Task SolveClues(SolveOrInterceptCluesVm model)
+    public Task SolveClues(SolveCluesCommand model)
     {
-        await _decryptoMatchService.SolveCluesASync(model, _userContextService.GetId()!.Value);
+        return _mediator.Send(model);
     }
     
     [HttpPost("intercept")]
-    public async Task Intercept(SolveOrInterceptCluesVm model)
+    public Task Intercept(InterceptCommand model)
     {
-        await _decryptoMatchService.InterceptASync(model, _userContextService.GetId()!.Value);
+        return _mediator.Send(model);
     }
 }

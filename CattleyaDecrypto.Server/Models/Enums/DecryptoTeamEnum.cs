@@ -3,7 +3,7 @@
 /// <summary>
 /// Possible teams.
 /// </summary>
-public enum TeamEnum : short
+public enum DecryptoTeamEnum : short
 {
     /// <summary>
     /// Unknown team.

@@ -24,8 +24,8 @@ export interface DecryptoMatch {
 export interface DecryptoTeam {
     miscommunicationCount: number;
     interceptionCount:     number;
-    words:                 Record<number, string>;
-    clues:                 Record<number, string[]>;
+    words:                 string[];
+    clues:                 Record<number, string[]> | null;
     players:               Record<string, string>;
 }
 

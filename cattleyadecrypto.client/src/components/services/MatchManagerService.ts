@@ -2,7 +2,6 @@
 import {
     DecryptoTeamEnum,
     DecryptoMatchState,
-    type DecryptoTeam,
     type DecryptoMatch,
     type DecryptoTemporaryClue,
     type DecryptoPlayerEvent,
@@ -19,7 +18,7 @@ export const MatchInfo = ref<DecryptoMatch | null>(null);
 export const NeedRiddler = computed(() => 
     !MatchInfo.value?.temporaryClues[Team.value]);
 export const IsRiddler = computed(() =>
-    MatchInfo.value?.temporaryClues[Team.value]?.riddlerId == DecryptoDataService.getPlayerId());
+    MatchInfo.value?.temporaryClues[Team.value]?.riddlerId == DecryptoDataService.userAuthData.value?.id);
 
 function updateMatch(match:DecryptoMatch) {
     MatchInfo.value = match;
@@ -35,7 +34,7 @@ function hideWords(match:DecryptoMatch) {
 }
 
 function calculateSides(match:DecryptoMatch) {
-    let userId = DecryptoDataService.getPlayerId();
+    let userId = DecryptoDataService.userAuthData.value?.id;
     Object.entries(match.teams).forEach(([key, val]) => {
         if (Object.keys(val.players).includes(userId)) {
             Team.value = key === '1' ? DecryptoTeamEnum.Red : DecryptoTeamEnum.Blue;
@@ -80,6 +79,18 @@ function assignClueGiver(event:DecryptoAssignPlayerEvent) {
     }
 }
 
+function setTeamWords(event: string[]) {
+    if (MatchInfo.value) {
+        MatchInfo.value.teams[Team.value].words = event;
+    }
+}
+
+function changePlayerName(event: DecryptoPlayerEvent) {
+    if (MatchInfo.value) {
+        MatchInfo.value.teams[event.team].players[event.playerId] = event.playerName;
+    }
+}
+
 export async function joinMatch(id: string): Promise<void> {
     try {
         MatchInfo.value = null;
@@ -92,13 +103,14 @@ export async function joinMatch(id: string): Promise<void> {
 
         await DecryptoMessageService.start();
 
-        await DecryptoMessageService.connection.invoke("JoinMatch", id);
-
         DecryptoMessageService.connection.on("StateChanged", (event: DecryptoMatchState) => {
             matchStateUpdated(event);
         });
         DecryptoMessageService.connection.on("PlayerJoined", (event: DecryptoPlayerEvent) => {
             playerJoined(event);
+        });
+        DecryptoMessageService.connection.on("SetTeamWords", (event: string[]) => {
+            setTeamWords(event);
         });
         DecryptoMessageService.connection.on("AssignRiddler", (event: DecryptoAssignPlayerEvent) => {
             assignClueGiver(event);
@@ -106,6 +118,11 @@ export async function joinMatch(id: string): Promise<void> {
         DecryptoMessageService.connection.on("SolveClues", (event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) => {
             prepareClues(event);
         });
+        DecryptoMessageService.connection.on("NameChanged", (event: DecryptoPlayerEvent) => {
+            changePlayerName(event);
+        });
+
+        await DecryptoMessageService.connection.invoke("JoinMatch", id);
         
         console.log('Successfully connected to match')
     } catch (err) {

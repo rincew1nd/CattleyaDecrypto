@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using CattleyaDecrypto.Server.Models.ViewModels;
+using CattleyaDecrypto.Server.Models.Models;
 using CattleyaDecrypto.Server.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -20,17 +20,18 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<AuthInfoVm> Login(
+    public async Task<UserInfo> Login(
         [FromQuery] string? name,
         [FromServices] INameGeneratorService nameGeneratorService)
     {
-        name ??= nameGeneratorService.GenerateName();
-        var userId = _userContextService.GetId() ?? Guid.NewGuid();
+        var userInfo = await _userContextService.TryGetUserInfo();
+        var userId = userInfo?.Id ?? Guid.NewGuid();
+        var userName = name ?? userInfo?.Name ?? nameGeneratorService.GenerateName();
         
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Name, name),
-            new(ClaimTypes.Sid, userId.ToString())
+            new(ClaimTypes.Name, userName),
+            new(ClaimTypes.NameIdentifier, userId.ToString())
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -39,35 +40,9 @@ public class AuthenticationController : ControllerBase
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(claimsIdentity));
 
-        return new AuthInfoVm()
-        {
-            UserId = userId,
-            Name = name
-        };
+        var userInfoNew = new UserInfo { Id = userId, Name = userName };
+        await _userContextService.SaveUserAsync(userInfoNew);
+        return userInfoNew;
     }
     
-    [Authorize]
-    [HttpPost("changeName")]
-    public async Task<AuthInfoVm> Login([FromQuery] string name)
-    {
-        var userId = _userContextService.GetId();
-        
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.Name, name),
-            new(ClaimTypes.Sid, userId.ToString()!)
-        };
-
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity));
-        
-        return new AuthInfoVm()
-        {
-            UserId = userId!.Value,
-            Name = name
-        };
-    }
 }

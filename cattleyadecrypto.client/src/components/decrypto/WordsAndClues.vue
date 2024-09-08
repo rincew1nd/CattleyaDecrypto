@@ -10,7 +10,8 @@ const { team } = defineProps<{ team: DecryptoTeamEnum }>();
     <div class="block br bl" v-for="(clues, key) in MatchInfo.teams[team].words">
       <span class="header p-10">{{clues}}</span>
       <hr/>
-      <div v-for="clue in MatchInfo.teams[team].clues[key]">
+      <div v-if="MatchInfo.teams[team].clues !== undefined"
+           v-for="clue in MatchInfo.teams[team].clues[key]">
         <p class="p-10">{{clue}}</p>
         <hr/>
       </div>

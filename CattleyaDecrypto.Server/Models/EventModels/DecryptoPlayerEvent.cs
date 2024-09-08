@@ -20,5 +20,5 @@ public class DecryptoPlayerEvent
     /// <summary>
     /// Player Team.
     /// </summary>
-    public TeamEnum Team { get; set; }
+    public DecryptoTeamEnum Team { get; set; }
 }

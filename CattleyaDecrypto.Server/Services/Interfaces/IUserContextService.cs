@@ -1,7 +1,11 @@
-﻿namespace CattleyaDecrypto.Server.Services.Interfaces;
+﻿using CattleyaDecrypto.Server.Models.Models;
+
+namespace CattleyaDecrypto.Server.Services.Interfaces;
 
 public interface IUserContextService
 {
-    string? GetName();
-    Guid? GetId();
+    Task<UserInfo?> TryGetUserInfo();
+    Task<UserInfo> GetUserInfo();
+    Guid GetId();
+    Task SaveUserAsync(UserInfo userInfoNew);
 }

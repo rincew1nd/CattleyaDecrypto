@@ -2,18 +2,24 @@
 import { ref } from "vue";
 
 import { MatchInfo, Team, joinMatch } from '../services/MatchManagerService'
+import DecryptoMessageService from "../services/DecryptoMessageService";
+import {useEventsBus} from "../services/UseEventBus";
 
 import WordsAndClues from "./WordsAndClues.vue";
 import TeamInfo from "./TeamInfo.vue";
 import TeamJoin from "./TeamJoin.vue";
 import GiveClues from "./GiveClues.vue";
 import GuessClues from "./GuessClues.vue";
-import {DecryptoMatchState, DecryptoTeamEnum} from "@/components/types/DecryptoTypes";
+import {DecryptoMatchState, DecryptoTeamEnum} from "../types/DecryptoTypes";
 
 let loading = ref<boolean>(true);
 const props = defineProps<{ id: string }>();
 
 joinMatch(props.id).then(() => { loading.value = false; });
+
+useEventsBus().on('NameChanged', () => {
+  DecryptoMessageService.connection.invoke("NameChanged", props.id)
+});
 </script>
 
 <template>

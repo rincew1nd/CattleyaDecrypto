@@ -1,7 +1,8 @@
 ﻿import { type DecryptoMatch, DecryptoTeamEnum } from '../types/DecryptoTypes'
+import {ref} from "vue";
 
-interface AuthInfo {
-    userId: string,
+interface UserInfo {
+    id: string,
     name: string
 }
 
@@ -13,25 +14,17 @@ export interface SubmitCluesRequest {
 }
 
 class DecryptoDataService {
-    private authInfo:AuthInfo | null = null;
     
     constructor() {
-        this.login().then(r => {});
+        this.login(null).then(r => {});
     }
 
-    getPlayerId(): string { return this.authInfo?.userId ?? ''; }
-    getPlayerName(): string { return this.authInfo?.name ?? ''; }
+    public userAuthData = ref<UserInfo | null>(null);
     
-    async login(): Promise<void> {
-        let response = await fetch('/api/authentication/login', {method: "POST"});
+    async login(name: string | null): Promise<void> {
+        let response = await fetch(`/api/authentication/login?${name != null ? `name=${name}` : ''}`, {method: "POST"});
         let json: any = await response.json();
-        this.authInfo = json as AuthInfo;
-    }
-
-    async changeName(name: string): Promise<void> {
-        let response = await fetch(`/api/authentication/changeName?name=${name}`, {method: "POST"});
-        let json: any = await response.json();
-        this.authInfo = json as AuthInfo;
+        this.userAuthData.value = json as UserInfo;
     }
     
     async createMatch(): Promise<DecryptoMatch> {
@@ -48,14 +41,12 @@ class DecryptoDataService {
 
     async joinTeam(id: string, team: DecryptoTeamEnum): Promise<boolean> {
         let response = await fetch(`/api/decrypto/join-team?matchId=${id}&team=${team}`, {method: "POST"});
-        let json: any = await response.json();
-        return json as boolean;
+        return response.status === 200;
     }
     
     async assignRiddler(id: string): Promise<boolean> {
         let response = await fetch(`/api/decrypto/assign-riddler?matchId=${id}`, {method: "POST"});
-        let json: any = await response.json();
-        return json as boolean;
+        return response.status === 200;
     }
 
     async submitClues(request:SubmitCluesRequest) {
@@ -66,8 +57,7 @@ class DecryptoDataService {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(request)
             });
-        let json: any = await response.json();
-        return json as boolean;
+        return response.status === 200;
     }
 }
 

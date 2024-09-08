@@ -21,7 +21,7 @@ public enum DecryptMatchState : short
     SolveClues = 2,
     
     /// <summary>
-    /// Intercept enemy team.
+    /// Intercept opponent team.
     /// </summary>
     Intercept = 3,
     

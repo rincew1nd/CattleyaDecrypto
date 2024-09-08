@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CattleyaDecrypto.Server.Models.Models;
 
 /// <summary>
@@ -14,12 +16,12 @@ public class TeamInfoModel
     /// Count of interceptions.
     /// </summary>
     public int InterceptionCount { get; set; }
-    
+
     /// <summary>
     /// Dictionary for words.
     /// </summary>
-    public Dictionary<int, string> Words { get; set; } = new();
-    
+    public string[] Words { get; set; }
+
     /// <summary>
     /// Dictionary for clues.
     /// </summary>
