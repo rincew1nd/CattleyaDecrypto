@@ -1,12 +1,15 @@
 ﻿<script setup lang="ts">
 import {ref} from "vue";
 import {router} from "@/router";
+import { useRoute } from 'vue-router'
 
 import Button from 'primevue/button'
 import Toolbar from 'primevue/toolbar'
 
 import DecryptoDataService from "../services/DecryptoDataService"
 import { useEventsBus } from '../services/UseEventBus';
+
+const route = useRoute();
 
 const showModal = ref(false);
 const newName = ref(DecryptoDataService.userAuthData.value?.name ?? '');
@@ -27,8 +30,8 @@ function changeUserEvent() {
     <template #start>
       <Button @click='newGameButton' label="New Game" text plain />
     </template>
-    <template v-if="$route.params.id" #center>
-      <h2>Game: {{$route.params.id}}</h2>
+    <template v-if="route.params.id" #center>
+      <h2>Game: {{route.params.id}}</h2>
     </template>
     <template #end>
       <p class="nickname">{{ DecryptoDataService.userAuthData.value?.name }}</p>

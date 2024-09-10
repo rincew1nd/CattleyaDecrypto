@@ -27,6 +27,13 @@ public class PlayerJoinedMatchHandler : DecryptoBaseHandler, IRequestHandler<Pla
         if (team.Key != default)
         {
             await SendSensitiveInfoAsync(_userContextService.GetId(), match, team.Key, cancellationToken);
+            
+            await _decryptoMessageHub.Clients
+                .User(_userContextService.GetId().ToString())
+                .SendAsync(
+                    "CluesUpdate",
+                    match.Teams.ToDictionary(kv => kv.Key, kv => kv.Value.Clues),
+                    cancellationToken);
         }
     }
 }

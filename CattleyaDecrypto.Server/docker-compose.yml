@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  decrypto:
+    image: decrypto
+    build:
+      context: .
+      dockerfile: ./CattleyaDecrypto.Server/Dockerfile
+    ports:
+      - "5394:8080"
+    depends_on:
+      - redis
+      
+  redis:
+    image: redis:latest
+    environment:
+      - REDIS_PORT=6379
+    ports:
+      - "6379:6379"
+    volumes:
+      - /path/to/local/dаta:/root/redis
+      - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf

@@ -71,7 +71,10 @@ public abstract class DecryptoBaseHandler
     /// <summary>
     /// Update a state of a match. Notify players about the change.
     /// </summary>
-    protected async Task UpdateMatchState(DecryptoMatch match, DecryptMatchState currentState)
+    protected async Task<bool> UpdateMatchState(
+        DecryptoMatch match,
+        DecryptMatchState currentState,
+        CancellationToken cancellationToken)
     {
         bool stateChanged = false;
         
@@ -100,37 +103,6 @@ public abstract class DecryptoBaseHandler
             {
                 if (match.RoundClues.All(x => x.Value.IsSolved))
                 {
-                    if (match.Round == 1)
-                    {
-                        match.State = DecryptMatchState.GiveClues;
-                        match.Round++;
-                    }
-                    match.State = DecryptMatchState.Intercept;
-                    stateChanged = true;
-                }
-                break;
-            }
-            case DecryptMatchState.Intercept:
-            {
-                if (match.RoundClues.All(x => x.Value.IsIntercepted))
-                {
-                    DecryptoTeamEnum wonTeam = DecryptoTeamEnum.Unknown;
-                    if (match.Teams[DecryptoTeamEnum.Blue].MiscommunicationCount == 2 ||
-                        match.Teams[DecryptoTeamEnum.Red].InterceptionCount == 2)
-                    {
-                        wonTeam = DecryptoTeamEnum.Red;
-                    }
-                    if (match.Teams[DecryptoTeamEnum.Red].MiscommunicationCount == 2 ||
-                        match.Teams[DecryptoTeamEnum.Blue].InterceptionCount == 2)
-                    {
-                        wonTeam = DecryptoTeamEnum.Blue;
-                    }
-
-                    match.WonTeam = wonTeam;
-                    match.State = wonTeam != DecryptoTeamEnum.Unknown || match.Round == 10
-                        ? DecryptMatchState.Finished
-                        : DecryptMatchState.GiveClues;
-
                     foreach (var temporaryClue in match.RoundClues)
                     {
                         for (var i = 0; i < temporaryClue.Value.Clues.Length; i++)
@@ -145,6 +117,52 @@ public abstract class DecryptoBaseHandler
                                 .Add(temporaryClue.Value.Clues[i]);
                         }
                     }
+                    
+                    if (match.Round == 1)
+                    {
+                        match.State = DecryptMatchState.GiveClues;
+                        match.Round++;
+                    }
+                    else
+                    {
+                        match.State = DecryptMatchState.Intercept;
+                        match.RoundClues.Clear();
+                    }
+                    
+                    stateChanged = true;
+                }
+                break;
+            }
+            case DecryptMatchState.Intercept:
+            {
+                if (match.RoundClues.All(x => x.Value.IsIntercepted))
+                {
+                    var matchWon = false;
+                    
+                    if (match.Teams[DecryptoTeamEnum.Blue].MiscommunicationCount == 2 ||
+                        match.Teams[DecryptoTeamEnum.Red].InterceptionCount == 2)
+                    {
+                        match.WonTeam = DecryptoTeamEnum.Red;
+                        matchWon = true;
+                    }
+                    if (match.Teams[DecryptoTeamEnum.Red].MiscommunicationCount == 2 ||
+                        match.Teams[DecryptoTeamEnum.Blue].InterceptionCount == 2)
+                    {
+                        match.WonTeam = match.WonTeam == DecryptoTeamEnum.Red
+                            ? DecryptoTeamEnum.Unknown
+                            : DecryptoTeamEnum.Blue;
+                        matchWon = true;
+                    }
+
+                    match.State = DecryptMatchState.GiveClues;
+                    if (matchWon || match.Round == 10)
+                    {
+                        match.State = DecryptMatchState.Finished;
+                        await _decryptoMessageHub.Clients
+                            .Group(match.Id.ToString())
+                            .SendAsync("MatchFinished", match.WonTeam, cancellationToken);
+                    }
+
                     match.RoundClues.Clear();
                     
                     stateChanged = true;
@@ -157,6 +175,8 @@ public abstract class DecryptoBaseHandler
         {
             await _decryptoMessageHub.Clients.Group(match.Id.ToString()).SendAsync("StateChanged", match.State);
         }
+
+        return stateChanged;
     }
 
     /// <summary>
@@ -190,6 +210,40 @@ public abstract class DecryptoBaseHandler
                         ? match.RoundClues[team].Order
                         : []
                 },
+                cancellationToken);
+    }
+
+    protected async Task ScoreAndStateUpdateEvent(
+        Guid matchId,
+        DecryptMatchState state,
+        DecryptoTeamEnum team,
+        int miscommunicationCount,
+        int interceptionCount,
+        CancellationToken cancellationToken)
+    {
+        await _decryptoMessageHub.Clients
+            .Group(matchId.ToString())
+            .SendAsync(
+                "ScoreAndStateUpdate",
+                new CluesUpdateEvent
+                {
+                    MatchState = state,
+                    Team = team,
+                    Miscommunications = miscommunicationCount,
+                    Interceptions = interceptionCount
+                },
+                cancellationToken);
+    }
+    
+    protected async Task CluesUpdateEvent(
+        DecryptoMatch match,
+        CancellationToken cancellationToken)
+    {
+        await _decryptoMessageHub.Clients
+            .Group(match.Id.ToString())
+            .SendAsync(
+                "CluesUpdate",
+                match.Teams.ToDictionary(kv => kv.Key, kv => kv.Value.Clues),
                 cancellationToken);
     }
 }

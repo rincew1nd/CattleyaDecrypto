@@ -46,7 +46,7 @@ public class JoinTeamHandler : DecryptoBaseHandler, IRequestHandler<JoinTeamComm
             
             await SendSensitiveInfoAsync(_userContextService.GetId(), match, request.team, cancellationToken);
 
-            await UpdateMatchState(match, DecryptMatchState.WaitingForPlayers);
+            await UpdateMatchState(match, DecryptMatchState.WaitingForPlayers, cancellationToken);
         });
     }
 }

@@ -43,13 +43,21 @@ public class InterceptHandler : DecryptoBaseHandler, IRequestHandler<InterceptCo
             }
 
             match.RoundClues[oppositeTeam].IsIntercepted = true;
-            if (cluesToSolve.Order == request.Order)
+            if (cluesToSolve.Order.SequenceEqual(request.Order))
             {
                 match.Teams[request.Team].InterceptionCount++;
             }
 
-            await UpdateMatchState(match, DecryptMatchState.Intercept);
-
+            await ScoreAndStateUpdateEvent(
+                request.MatchId,
+                DecryptMatchState.Intercept,
+                request.Team,
+                match.Teams[request.Team].MiscommunicationCount,
+                match.Teams[request.Team].InterceptionCount,
+                cancellationToken);
+            
+            await UpdateMatchState(match, DecryptMatchState.Intercept, cancellationToken);
+            
             if (match.State == DecryptMatchState.Finished)
             {
                 await _decryptoMessageHub.Clients

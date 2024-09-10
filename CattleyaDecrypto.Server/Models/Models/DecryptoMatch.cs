@@ -30,7 +30,7 @@ public class DecryptoMatch
     /// <summary>
     /// Bit representation of all available variants of word order.
     /// </summary>
-    public int AvailableWordOrders = 16777215;
+    public int AvailableWordOrders { get; set; } = 16777215;
 
     /// <summary>
     /// Team information.

@@ -46,7 +46,10 @@ public class AssignRiddlerHandler : DecryptoBaseHandler, IRequestHandler<AssignR
                 throw new ApplicationException("Riddler is already assigned!");
             }
 
-            var order = _orderGeneratorService.GetRandomOrder(ref match.AvailableWordOrders);
+            var availableWordOrder = match.AvailableWordOrders;
+            var order = _orderGeneratorService.GetRandomOrder(ref availableWordOrder);
+            match.AvailableWordOrders = availableWordOrder;
+            
             var result = match.RoundClues.TryAdd(
                 playerTeam,
                 new CluesToSolve
@@ -71,7 +74,7 @@ public class AssignRiddlerHandler : DecryptoBaseHandler, IRequestHandler<AssignR
 
                 await SendSensitiveInfoAsync(_userContextService.GetId(), match, playerTeam, cancellationToken);
                 
-                await UpdateMatchState(match, DecryptMatchState.GiveClues);
+                await UpdateMatchState(match, DecryptMatchState.GiveClues, cancellationToken);
             }
         });
     }

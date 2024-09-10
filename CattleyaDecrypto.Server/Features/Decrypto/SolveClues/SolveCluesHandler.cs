@@ -36,12 +36,23 @@ public class SolveCluesHandler : DecryptoBaseHandler, IRequestHandler<SolveClues
             }
 
             match.RoundClues[request.Team].IsSolved = true;
-            if (cluesToSolve.Order != request.Order)
+            if (!cluesToSolve.Order.SequenceEqual(request.Order))
             {
                 match.Teams[request.Team].MiscommunicationCount++;
             }
 
-            await UpdateMatchState(match, DecryptMatchState.SolveClues);
+            await ScoreAndStateUpdateEvent(
+                request.MatchId,
+                DecryptMatchState.SolveClues,
+                request.Team,
+                match.Teams[request.Team].MiscommunicationCount,
+                match.Teams[request.Team].InterceptionCount,
+                cancellationToken);
+
+            if (await UpdateMatchState(match, DecryptMatchState.SolveClues, cancellationToken))
+            {
+                await CluesUpdateEvent(match, cancellationToken);
+            }
         });
     }
 }

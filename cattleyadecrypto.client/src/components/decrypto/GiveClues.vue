@@ -47,10 +47,10 @@ function assignPlayer() {
     </div>
     <div v-if="!NeedRiddler && MatchInfo" class="content">
       <div v-if="(MatchInfo.roundClues[Team]?.clues ?? null) !== null">
-        <p>Waiting for opponent team to make clues...</p>
+        <p class="text-notification">Waiting for opponent team to make clues...</p>
       </div>
       <div v-else-if="!IsRiddler">
-        <p>Waiting for your team to make clues...</p>
+        <p class="text-notification">Waiting for your team to make clues...</p>
       </div>
     </div>
   </div>

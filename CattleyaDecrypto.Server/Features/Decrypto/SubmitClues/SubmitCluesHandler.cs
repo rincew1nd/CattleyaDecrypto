@@ -1,4 +1,5 @@
 ﻿using CattleyaDecrypto.Server.Models.Enums;
+using CattleyaDecrypto.Server.Models.EventModels;
 using CattleyaDecrypto.Server.Services.Interfaces;
 using CattleyaDecrypto.Server.Services.SignalR;
 using MediatR;
@@ -39,23 +40,18 @@ public class SubmitCluesHandler : DecryptoBaseHandler, IRequestHandler<SubmitClu
 
             match.RoundClues[request.Team].Clues = request.Clues;
 
-            await UpdateMatchState(match, DecryptMatchState.GiveClues);
-
             await _decryptoMessageHub.Clients
                 .Group(match.Id.ToString())
                 .SendAsync(
                     "SolveClues",
-                    match.RoundClues
-                        .ToDictionary(
-                            kv => kv.Key,
-                            kv => new DecryptoMatchCluesResponse()
-                            {
-                                RiddlerId = kv.Value.RiddlerId,
-                                IsIntercepted = kv.Value.IsIntercepted,
-                                IsSolved = kv.Value.IsSolved,
-                                Clues = kv.Value.Clues
-                            }),
+                    new PrepareClueEvent()
+                    {
+                        Team = request.Team,
+                        Clues = request.Clues
+                    },
                     cancellationToken);
+
+            await UpdateMatchState(match, DecryptMatchState.GiveClues, cancellationToken);
         });
     }
 }

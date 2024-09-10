@@ -50,6 +50,9 @@ useEventsBus().on('NameChanged', () => {
     <div v-if="MatchInfo.state === DecryptoMatchState.SolveClues || MatchInfo.state === DecryptoMatchState.Intercept">
       <GuessClues/>
     </div>
+    <div v-if="MatchInfo.state === DecryptoMatchState.Finished">
+      <MatchFinished/>
+    </div>
   </div>
 </template>
 

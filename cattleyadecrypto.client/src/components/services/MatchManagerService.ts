@@ -1,11 +1,13 @@
 ﻿import {computed, ref} from "vue";
 import {
-    DecryptoTeamEnum,
-    DecryptoMatchState,
     type DecryptoMatch,
-    type DecryptoTemporaryClue,
+    DecryptoMatchState,
     type DecryptoPlayerEvent,
-    type DecryptoSensitiveInfoEvent
+    type DecryptoSensitiveInfoEvent,
+    DecryptoTeamEnum,
+    type DecryptoTemporaryClue,
+    type PrepareClue,
+    type ScoreAndStateUpdate
 } from "@/components/types/DecryptoTypes";
 
 import DecryptoDataService from '../services/DecryptoDataService'
@@ -27,29 +29,9 @@ function updateMatch(match:DecryptoMatch) {
     console.log('Match state updated', MatchInfo, Team);
 }
 
-function hideWords(match:DecryptoMatch) {
-    if (OppositeTeam.value != DecryptoTeamEnum.Unknown) {
-        match.teams[OppositeTeam.value].words = ['#', '#', '#', '#']
-    }
-}
-
-function calculateSides(match:DecryptoMatch) {
-    let userId = DecryptoDataService.userAuthData.value?.id;
-    Object.entries(match.teams).forEach(([key, val]) => {
-        if (Object.keys(val.players).includes(userId)) {
-            Team.value = key === '1' ? DecryptoTeamEnum.Red : DecryptoTeamEnum.Blue;
-        }
-    });
-    OppositeTeam.value = Team.value === DecryptoTeamEnum.Unknown
-        ? DecryptoTeamEnum.Unknown
-        : Team.value === DecryptoTeamEnum.Blue
-            ? DecryptoTeamEnum.Red
-            : DecryptoTeamEnum.Blue;
-}
-
-function matchStateUpdated(event:DecryptoMatchState) {
+function changePlayerName(event: DecryptoPlayerEvent) {
     if (MatchInfo.value) {
-        MatchInfo.value.state = event;
+        MatchInfo.value.teams[event.team].players[event.playerId] = event.playerName;
     }
 }
 
@@ -61,9 +43,19 @@ function playerJoined(event:DecryptoPlayerEvent) {
     }
 }
 
-function prepareClues(event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) {
+function setSensitiveInfo(event: DecryptoSensitiveInfoEvent) {
     if (MatchInfo.value) {
-        MatchInfo.value.roundClues = event;
+        MatchInfo.value.teams[Team.value].words = event.words;
+        MatchInfo.value.roundClues[Team.value].order = event.roundWordOrder;
+    }
+}
+
+function matchStateUpdated(event:DecryptoMatchState) {
+    if (MatchInfo.value) {
+        MatchInfo.value.state = event;
+        if (event === DecryptoMatchState.GiveClues) {
+            MatchInfo.value.roundClues = {} as Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
+        }
     }
 }
 
@@ -75,16 +67,62 @@ function assignClueGiver(event:DecryptoPlayerEvent) {
     }
 }
 
-function setSensitiveInfo(event: DecryptoSensitiveInfoEvent) {
+function prepareClues(event: PrepareClue) {
     if (MatchInfo.value) {
-        MatchInfo.value.teams[Team.value].words = event.words;
-        MatchInfo.value.roundClues[Team.value].order = event.roundWordOrder;
+        MatchInfo.value.roundClues[event.team].clues = event.clues;
     }
 }
 
-function changePlayerName(event: DecryptoPlayerEvent) {
+function scoreAndStateUpdate(event: ScoreAndStateUpdate) {
     if (MatchInfo.value) {
-        MatchInfo.value.teams[event.team].players[event.playerId] = event.playerName;
+        MatchInfo.value.teams[event.team].interceptionCount = event.interceptions;
+        MatchInfo.value.teams[event.team].miscommunicationCount = event.miscommunications;
+        if (event.matchState === DecryptoMatchState.SolveClues) {
+            MatchInfo.value.roundClues[event.team].isSolved = true;
+        }
+        if (event.matchState === DecryptoMatchState.Intercept) {
+            MatchInfo.value.roundClues[getOppositeTeam(event.team)].isIntercepted = true;
+        }
+    }
+}
+
+function cluesUpdate(event: Record<string, Record<number, string[]>>) {
+    if (MatchInfo.value) {
+        MatchInfo.value.teams[DecryptoTeamEnum.Red].clues = event[DecryptoTeamEnum.Red];
+        MatchInfo.value.teams[DecryptoTeamEnum.Blue].clues = event[DecryptoTeamEnum.Blue];
+    }
+}
+
+// Private methods to update model
+
+function hideWords(match:DecryptoMatch) {
+    if (OppositeTeam.value != DecryptoTeamEnum.Unknown) {
+        match.teams[OppositeTeam.value].words = ['1', '2', '3', '4']
+    }
+}
+
+function calculateSides(match:DecryptoMatch) {
+    let userId = DecryptoDataService.userAuthData.value?.id;
+    Object.entries(match.teams).forEach(([key, val]) => {
+        if (Object.keys(val.players).includes(userId!)) {
+            Team.value = key === '1' ? DecryptoTeamEnum.Red : DecryptoTeamEnum.Blue;
+        }
+    });
+    OppositeTeam.value = getOppositeTeam(Team.value);
+}
+
+function getOppositeTeam(team:DecryptoTeamEnum) {
+    return team === DecryptoTeamEnum.Unknown
+        ? DecryptoTeamEnum.Unknown
+        : team === DecryptoTeamEnum.Blue
+            ? DecryptoTeamEnum.Red
+            : DecryptoTeamEnum.Blue;
+}
+
+function matchFinished(event: DecryptoTeamEnum) {
+    if (MatchInfo.value) {
+        MatchInfo.value.wonTeam = event;
+        MatchInfo.value.state = DecryptoMatchState.Finished;
     }
 }
 
@@ -112,11 +150,20 @@ export async function joinMatch(id: string): Promise<void> {
         DecryptoMessageService.connection.on("AssignRiddler", (event: DecryptoPlayerEvent) => {
             assignClueGiver(event);
         });
-        DecryptoMessageService.connection.on("SolveClues", (event: Record<DecryptoTeamEnum, DecryptoTemporaryClue>) => {
+        DecryptoMessageService.connection.on("SolveClues", (event: PrepareClue) => {
             prepareClues(event);
+        });
+        DecryptoMessageService.connection.on("ScoreAndStateUpdate", (event: ScoreAndStateUpdate) => {
+            scoreAndStateUpdate(event);
+        });
+        DecryptoMessageService.connection.on("CluesUpdate", (event: Record<string, Record<number, string[]>>) => {
+            cluesUpdate(event);
         });
         DecryptoMessageService.connection.on("NameChanged", (event: DecryptoPlayerEvent) => {
             changePlayerName(event);
+        });
+        DecryptoMessageService.connection.on("MatchFinished", (event: DecryptoTeamEnum) => {
+           matchFinished(event); 
         });
 
         await DecryptoMessageService.connection.invoke("JoinMatch", id);

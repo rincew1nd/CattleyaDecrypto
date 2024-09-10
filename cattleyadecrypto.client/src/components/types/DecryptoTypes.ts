@@ -13,11 +13,11 @@ export enum DecryptoTeamEnum {
 }
 
 export interface DecryptoMatch {
-    id:             string;
-    round:          number;
-    state:          DecryptoMatchState;
-    wonTeam?:       DecryptoTeamEnum;
-    teams:          Record<DecryptoTeamEnum, DecryptoTeam>;
+    id:         string;
+    round:      number;
+    state:      DecryptoMatchState;
+    wonTeam?:   DecryptoTeamEnum;
+    teams:      Record<DecryptoTeamEnum, DecryptoTeam>;
     roundClues: Record<DecryptoTeamEnum, DecryptoTemporaryClue>;
 }
 
@@ -31,7 +31,7 @@ export interface DecryptoTeam {
 
 export interface DecryptoTemporaryClue {
     order:         number[];
-    clues:         Record<number, string>;
+    clues:         string[];
     riddlerId:     string;
     isSolved:      boolean;
     isIntercepted: boolean;
@@ -46,4 +46,16 @@ export interface DecryptoPlayerEvent {
 export interface DecryptoSensitiveInfoEvent {
     words:          string[];
     roundWordOrder: number[];
+}
+
+export interface PrepareClue {
+    team:  DecryptoTeamEnum;
+    clues: string[];
+}
+
+export interface ScoreAndStateUpdate {
+    matchState: DecryptoMatchState,
+    team: DecryptoTeamEnum,
+    miscommunications: number,
+    interceptions: number
 }
