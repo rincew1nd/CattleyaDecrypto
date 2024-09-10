@@ -121,12 +121,12 @@ public abstract class DecryptoBaseHandler
                     if (match.Round == 1)
                     {
                         match.State = DecryptMatchState.GiveClues;
+                        match.RoundClues.Clear();
                         match.Round++;
                     }
                     else
                     {
                         match.State = DecryptMatchState.Intercept;
-                        match.RoundClues.Clear();
                     }
                     
                     stateChanged = true;
