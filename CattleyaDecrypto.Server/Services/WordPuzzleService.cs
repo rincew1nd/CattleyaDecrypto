@@ -12,7 +12,7 @@ public class WordPuzzleService : IWordPuzzleService
         using var stream = Assembly.GetExecutingAssembly()
             .GetManifestResourceStream("CattleyaDecrypto.Server.Resources.short-wordlist.txt");
         using var reader = new StreamReader(stream!);
-        Words = reader.ReadToEnd().Split("\r\n").Where(w => w.Length > 2).ToList();
+        Words = reader.ReadToEnd().Split(";").Where(w => w.Length > 2).ToList();
     }
     
     public IEnumerable<string> PuzzleWords(int count)
